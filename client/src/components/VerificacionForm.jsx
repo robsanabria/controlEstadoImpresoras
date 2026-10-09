@@ -12,13 +12,24 @@ function cabeceraInicial(campos) {
 const respuestasIniciales = (checks) =>
   Object.fromEntries(checks.map((c) => [c.id, { respuesta: '', problematica: '' }]));
 
+/** Clase del pad según lo que significa esa respuesta para este chequeo. */
+function clasePad(check, opcion, noAplica) {
+  if (opcion === check.esperado) return 'on-ok';
+  if (opcion === noAplica) return 'on-neutro';
+  return 'on-mal';
+}
+
 /**
- * Una pregunta: el texto y dos pads grandes Sí / No.
- * El campo de problemática sólo aparece cuando la respuesta no es la esperada
- * (es decir, cuando el lector falló). Así se completa de un toque por pregunta.
+ * Una pregunta: el texto y los pads grandes (Sí / No / No aplica).
+ * El campo de texto sólo aparece cuando la respuesta no es la esperada:
+ * obligatorio si el lector falló, opcional para aclarar un "No aplica".
+ * Así se completa de un toque por pregunta.
  */
-function Chequeo({ check, valor, opciones, onRespuesta, onProblematica }) {
-  const falla = valor.respuesta && valor.respuesta !== check.esperado;
+function Chequeo({ check, valor, opciones, noAplica, onRespuesta, onProblematica }) {
+  const respondida = !!valor.respuesta;
+  const esNoAplica = valor.respuesta === noAplica;
+  const falla = respondida && valor.respuesta !== check.esperado && !esNoAplica;
+  const pideTexto = respondida && valor.respuesta !== check.esperado;
   const ayudaId = check.ayuda ? `ayuda-${check.id}` : undefined;
 
   return (
@@ -35,7 +46,7 @@ function Chequeo({ check, valor, opciones, onRespuesta, onProblematica }) {
           <button
             key={o}
             type="button"
-            className={`pad ${valor.respuesta === o ? (o === check.esperado ? 'on-ok' : 'on-mal') : ''}`}
+            className={`pad ${valor.respuesta === o ? clasePad(check, o, noAplica) : ''}`}
             aria-pressed={valor.respuesta === o}
             onClick={() => onRespuesta(o)}
           >
@@ -44,18 +55,26 @@ function Chequeo({ check, valor, opciones, onRespuesta, onProblematica }) {
         ))}
       </div>
 
-      {falla && (
+      {pideTexto && (
         <div className="campo-grupo ancho">
           <label className="campo-etq" htmlFor={`prob-${check.id}`}>
-            Especificar problemática <span className="req" aria-hidden="true">*</span>
-            <span className="campo-ayuda"> (pregunta {check.nroProblematica} del formulario)</span>
+            {esNoAplica ? (
+              <>
+                Por qué no aplica <span className="campo-ayuda">(opcional)</span>
+              </>
+            ) : (
+              <>
+                Especificar problemática <span className="req" aria-hidden="true">*</span>
+                <span className="campo-ayuda"> (pregunta {check.nroProblematica} del formulario)</span>
+              </>
+            )}
           </label>
           <textarea
             id={`prob-${check.id}`}
             className="campo"
             rows={2}
             maxLength={1000}
-            placeholder="Qué pasó y qué se hizo"
+            placeholder={esNoAplica ? 'Por ejemplo: la línea no tiene esta estación' : 'Qué pasó y qué se hizo'}
             value={valor.problematica}
             onChange={(e) => onProblematica(e.target.value)}
           />
@@ -71,7 +90,9 @@ function Chequeo({ check, valor, opciones, onRespuesta, onProblematica }) {
  * pregunta escrita a mano.
  */
 export default function VerificacionForm({ config, onSubmit }) {
-  const { campos_visita: camposVisita, secciones, checks, respuestas: opciones } = config;
+  const {
+    campos_visita: camposVisita, secciones, checks, respuestas: opciones, no_aplica: noAplica,
+  } = config;
 
   const [cabecera, setCabecera] = useState(() => cabeceraInicial(camposVisita));
   const [valores, setValores] = useState(() => respuestasIniciales(checks));
@@ -83,8 +104,12 @@ export default function VerificacionForm({ config, onSubmit }) {
     [checks, valores]
   );
   const fallas = useMemo(
-    () => checks.filter((c) => valores[c.id]?.respuesta && valores[c.id].respuesta !== c.esperado).length,
-    [checks, valores]
+    () =>
+      checks.filter((c) => {
+        const r = valores[c.id]?.respuesta;
+        return r && r !== c.esperado && r !== noAplica;
+      }).length,
+    [checks, valores, noAplica]
   );
 
   const porSeccion = useMemo(
@@ -121,7 +146,7 @@ export default function VerificacionForm({ config, onSubmit }) {
       const v = valores[c.id] || {};
       if (!v.respuesta) {
         errs.push(`Falta responder la pregunta ${c.nro}.`);
-      } else if (v.respuesta !== c.esperado && !v.problematica.trim()) {
+      } else if (v.respuesta !== c.esperado && v.respuesta !== noAplica && !v.problematica.trim()) {
         errs.push(`Pregunta ${c.nro}: falta especificar la problemática.`);
       }
     });
@@ -191,6 +216,7 @@ export default function VerificacionForm({ config, onSubmit }) {
               check={c}
               valor={valores[c.id]}
               opciones={opciones}
+              noAplica={noAplica}
               onRespuesta={(v) => setRespuesta(c.id, v)}
               onProblematica={(v) => setProblematica(c.id, v)}
             />

@@ -17,6 +17,8 @@
  *
  * En todos los chequeos lo esperado es "Si": el lector TIENE que rechazar (o
  * etiquetar el error). Un "No" es la falla, y por eso pide la problemática.
+ * "No aplica" no existe en el Form original: se sumó para las estaciones que no
+ * están en la línea que se verifica. No cuenta como falla y no exige texto.
  */
 
 // Secciones del Form, en orden. Cada una es una estación de la línea.
@@ -85,8 +87,10 @@ const CHECKS = [
   },
 ];
 
-// Respuestas posibles de cada chequeo (el Form es Sí/No, single choice).
-const RESPUESTAS = ['Si', 'No'];
+// Respuestas posibles de cada chequeo. El Form original es Sí/No; "No aplica"
+// se agregó para las estaciones que no corresponden a lo que se está verificando.
+const NO_APLICA = 'No aplica';
+const RESPUESTAS = ['Si', 'No', NO_APLICA];
 
 // ---------------------------------------------------------------------------
 // Cabecera de la verificación (una fila en sistemas.VerificacionLectores).
@@ -99,8 +103,11 @@ const TURNOS = ['Mañana', 'Tarde', 'Noche'];
 const CAMPOS_VISITA = [
   { name: 'fecha', label: 'Fecha de la verificación', type: 'date', required: true, sqlType: 'date' },
   { name: 'sector', label: 'Sector que da el conforme', type: 'select', required: true, options: SECTORES,
-    sqlType: 'nvarchar', help: 'Define qué encargado firma esta verificación.' },
-  { name: 'turno', label: 'Turno', type: 'select', required: false, options: TURNOS, sqlType: 'nvarchar' },
+    sqlType: 'nvarchar', help: 'Insumos o Empaque: define de qué sector es el encargado que firma.' },
+  // Obligatorio: el conforme lo da el encargado DEL TURNO, así que sin turno no
+  // se sabe a quién le toca firmar.
+  { name: 'turno', label: 'Turno', type: 'select', required: true, options: TURNOS, sqlType: 'nvarchar',
+    help: 'Firma el encargado de este turno.' },
   { name: 'observaciones_generales', label: 'Observaciones generales', type: 'textarea', required: false,
     sqlType: 'texto', help: 'Opcional. Algo que valga para toda la verificación.' },
 ];
@@ -130,6 +137,14 @@ const CHECK_POR_ID = Object.fromEntries(CHECKS.map((c) => [c.id, c]));
 
 /** ¿Esta respuesta es una falla? (y entonces exige problemática) */
 function esFalla(check, respuesta) {
+  return !!respuesta && respuesta !== check.esperado && respuesta !== NO_APLICA;
+}
+
+/**
+ * ¿Hay que pedir texto para esta respuesta?
+ * Obligatorio cuando es falla; opcional para aclarar un "No aplica".
+ */
+function pideTexto(check, respuesta) {
   return !!respuesta && respuesta !== check.esperado;
 }
 
@@ -138,10 +153,12 @@ module.exports = {
   CHECKS,
   CHECK_POR_ID,
   RESPUESTAS,
+  NO_APLICA,
   CAMPOS_VISITA,
   SECTORES,
   TURNOS,
   FORM_META,
   ESTADOS,
   esFalla,
+  pideTexto,
 };

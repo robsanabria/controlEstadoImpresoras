@@ -51,6 +51,8 @@
   color: var(--danger-txt); border-color: var(--danger);
   background: rgba(226, 87, 78, 0.16);
 }
+/* "No aplica": ni bien ni mal, sólo elegido. */
+.pad.on-neutro { color: var(--text); border-color: var(--muted); background: var(--panel-2); }
 
 /* ---- Ficha de la cabecera en el detalle ---------------------------------- */
 .ficha {

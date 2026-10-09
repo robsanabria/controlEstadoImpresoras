@@ -19,7 +19,7 @@ CREATE TABLE sistemas.VerificacionLectores (
     [Id] INT IDENTITY(1,1) CONSTRAINT PK_VerificacionLectores PRIMARY KEY,
     [fecha] DATE NOT NULL,
     [sector] NVARCHAR(255) NOT NULL,
-    [turno] NVARCHAR(255) NULL,
+    [turno] NVARCHAR(255) NOT NULL,
     [observaciones_generales] NVARCHAR(1000) NULL,
     -- Circuito de conforme: Pendiente / Conforme / Observado
     [Estado] NVARCHAR(20) NOT NULL

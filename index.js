@@ -11,7 +11,7 @@ const { modulosDe } = require('./lib/modulos');
 const { noEncontrado, manejarError } = require('./middlewares/errores');
 const roles = require('./config/roles');
 const {
-  CAMPOS_VISITA, SECCIONES, CHECKS, RESPUESTAS, SECTORES, FORM_META, ESTADOS,
+  CAMPOS_VISITA, SECCIONES, CHECKS, RESPUESTAS, NO_APLICA, SECTORES, FORM_META, ESTADOS,
 } = require('./config/formConfig');
 
 const app = express();
@@ -78,6 +78,8 @@ app.get('/api/form-config', auth, (req, res) =>
     secciones: SECCIONES,
     checks: CHECKS,
     respuestas: RESPUESTAS,
+    // Cuál de las respuestas es el "No aplica": el cliente no la escribe a mano.
+    no_aplica: NO_APLICA,
     sectores: SECTORES,
     estados: ESTADOS,
     permisos: permisosDe(req.user),

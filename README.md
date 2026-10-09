@@ -6,8 +6,9 @@ LECTORES"**. Tiene dos manos:
 1. **Sistemas hace la prueba y carga la verificación**: responde los 10 chequeos
    de las 6 estaciones (armado de cajas, troneras, empaque, rechazo, balanza,
    rechazo despostada).
-2. **El encargado del sector da el conforme**: entra con su usuario, ve la
-   verificación completa y firma (o la observa con un comentario).
+2. **El encargado del turno da el conforme**: entra con su usuario, ve la
+   verificación completa y firma (o la observa con un comentario). Por eso el
+   **turno es obligatorio**: sin turno no se sabe a quién le toca firmar.
 
 Login único con **Entra ID (Easy Auth)** y autorización contra el **padrón
 central `acceso`** (app `lectores`). Barra y paleta del estándar visual
@@ -18,10 +19,12 @@ compartido (`plataforma/ui`).
 El Form tiene 20 preguntas, pero son **10 chequeos**: cada "Especificar
 problemática" es el seguimiento del Sí/No anterior. Acá:
 
-- Cada chequeo es **un toque**: dos pads grandes **Sí / No** (52 px, pensados
-  para usar en planta con el celular en la mano).
+- Cada chequeo es **un toque**: tres pads grandes **Sí / No / No aplica** (52 px,
+  pensados para usar en planta con el celular en la mano).
 - El campo de problemática **aparece solo cuando hace falta** — cuando la
   respuesta no es la esperada. Si anduvo todo, no se escribe una sola letra.
+- **"No aplica"** (para la estación que esa línea no tiene) no cuenta como
+  problema y no exige texto: deja un campo opcional para aclarar por qué.
 - Botón **"Anduvo todo bien"**: responde los 10 chequeos de una, y después se
   corrige el que falló. El caso normal se completa en segundos.
 - Arriba se ve siempre **cuántas van** (`7 de 10`) y **cuántas tienen problema**.
@@ -42,7 +45,8 @@ Sistemas carga  →  Pendiente  →  el encargado firma   →  Conforme
   puede darle el conforme (`PERMITIR_AUTOFIRMA=false`). Es lo que hace que la
   firma valga algo.
 - **El sector manda.** El encargado de Insumos no firma verificaciones de
-  Empaque (ver `config/roles.js`).
+  Empaque (ver `config/roles.js`). Dentro del sector, firma el encargado del
+  turno que quedó registrado en la verificación.
 - **Una sola firma por verificación.** Si dos encargados entran a la vez, el
   segundo recibe un aviso en vez de pisar la firma del primero.
 - **Observar exige comentario**: es el rechazo del conforme y tiene que decir
@@ -51,8 +55,8 @@ Sistemas carga  →  Pendiente  →  el encargado firma   →  Conforme
 ## El cuestionario se define en un solo archivo
 
 Todo está en **`config/formConfig.js`**: las 6 secciones, los 10 chequeos (texto,
-número en el Form original, ayuda, respuesta esperada) y los campos de la
-cabecera. De ahí salen el formulario, la validación del servidor, el detalle y
+número en el Form original, ayuda, respuesta esperada), las respuestas posibles
+(incluido el `No aplica`) y los campos de la cabecera. De ahí salen el formulario, la validación del servidor, el detalle y
 el CSV. **No hay ninguna pregunta escrita a mano en el cliente.**
 
 Agregar, sacar o reescribir una pregunta **no necesita migración**: las

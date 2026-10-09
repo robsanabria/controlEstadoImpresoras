@@ -2,7 +2,7 @@
 
 Sistema web interno de Offal. Reemplaza el Microsoft Form "VERIFICACIÓN DE
 LECTORES". Lo usan Sistemas (hace la prueba de los lectores de la línea y carga
-la verificación) y los encargados de Insumos y Empaque (dan el conforme).
+la verificación) y los encargados de turno de Insumos y Empaque (dan el conforme).
 
 > El repo se llama `controlEstadoImpresoras` por un arranque anterior; el módulo
 > es Verificación de Lectores. Si se renombra el repo, actualizar el remoto.
@@ -38,10 +38,12 @@ Sin base: `MODO_DEMO=true` + `ALLOW_DEV_LOGIN=true` (ver README).
   si cambia, `npm run migracion > db/migrations/NNN-descripcion.sql`.
 - **Cada fila guarda la pregunta tal como se hizo**: cambiar el cuestionario no
   reescribe lo ya firmado.
-- **`EsFalla` lo calcula el servidor** comparando con `esperado`. Es lo que se
-  cuenta como problema en los listados; no se confía en el cliente.
-- **Si la respuesta no es la esperada, la problemática es obligatoria** (lo
-  valida el servidor, no sólo el formulario).
+- **`EsFalla` lo calcula el servidor** comparando con `esperado` (y descartando
+  `No aplica`). Es lo que se cuenta como problema en los listados; no se confía
+  en el cliente.
+- **Si la respuesta es "No", la problemática es obligatoria** (lo valida el
+  servidor, no sólo el formulario). **"No aplica" no es falla**: no exige texto
+  y no cuenta como problema; el campo queda opcional para aclarar por qué.
 - **El conforme no se escribe, se firma.** El firmante sale siempre de
   `req.user` (Easy Auth). Ningún endpoint acepta "firmado por" desde el body.
 - **Quien carga no firma** (`PERMITIR_AUTOFIRMA`), y el encargado sólo firma su
@@ -78,4 +80,5 @@ Sin base: `MODO_DEMO=true` + `ALLOW_DEV_LOGIN=true` (ver README).
 ## Pendientes
 
 - Infra: App Service, Easy Auth, migración 001 y alta de `lectores` en `acceso`.
-- Confirmar con planta si alguna pregunta necesita "No aplica" además de Sí/No.
+- El `turno` es obligatorio porque firma el encargado de ese turno. Si algún día
+  el conforme deja de depender del turno, se afloja en `CAMPOS_VISITA`.

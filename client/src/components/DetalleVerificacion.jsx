@@ -14,6 +14,16 @@ export function fmtFechaHora(v) {
   return d.toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
 }
 
+/**
+ * Color del chip de una respuesta: verde si anduvo, rojo si falló y neutro para
+ * "No aplica" (que no es ni bueno ni malo).
+ */
+function chipRespuesta(fila, noAplica) {
+  if (fila.EsFalla) return 'chip-mal';
+  if (fila.Respuesta === noAplica) return '';
+  return 'chip-ok';
+}
+
 export function EstadoChip({ estado }) {
   const clase =
     estado === 'Conforme' ? 'chip chip-ok' : estado === 'Observado' ? 'chip chip-aviso' : 'chip chip-info';
@@ -28,7 +38,7 @@ export function EstadoChip({ estado }) {
  * y el servidor vuelve a validar el permiso y el sector.
  */
 export default function DetalleVerificacion({ verificacion, config, onFirmar, puedeFirmarSector }) {
-  const { campos_visita: camposVisita, secciones } = config;
+  const { campos_visita: camposVisita, secciones, no_aplica: noAplica } = config;
   const [comentario, setComentario] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState(null);
@@ -102,7 +112,7 @@ export default function DetalleVerificacion({ verificacion, config, onFirmar, pu
               <p className="respuesta-pregunta">
                 <span className="chequeo-nro">{r.PreguntaNro}</span> {r.Pregunta}
               </p>
-              <span className={`chip ${r.EsFalla ? 'chip-mal' : 'chip-ok'}`}>
+              <span className={`chip ${chipRespuesta(r, noAplica)}`}>
                 {r.Respuesta === 'Si' ? 'Sí' : r.Respuesta}
               </span>
               {r.Problematica && <p className="cita">“{r.Problematica}”</p>}

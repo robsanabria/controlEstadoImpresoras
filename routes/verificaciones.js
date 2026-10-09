@@ -3,7 +3,7 @@ const store = require('../services/store');
 const roles = require('../config/roles');
 const { ErrorHttp, asyncHandler } = require('../middlewares/errores');
 const {
-  CAMPOS_VISITA, CHECKS, CHECK_POR_ID, RESPUESTAS, ESTADOS, esFalla,
+  CAMPOS_VISITA, CHECKS, CHECK_POR_ID, RESPUESTAS, ESTADOS, esFalla, pideTexto,
 } = require('../config/formConfig');
 
 const router = express.Router();
@@ -78,8 +78,9 @@ function validarRespuestas(body) {
       PreguntaNro: check.nro,
       Pregunta: check.texto,
       Respuesta: respuesta,
-      // La problemática sólo tiene sentido cuando hubo falla.
-      Problematica: falla ? problematica : null,
+      // Texto sólo cuando la respuesta no es la esperada: obligatorio si es
+      // falla, opcional para aclarar un "No aplica".
+      Problematica: pideTexto(check, respuesta) ? problematica || null : null,
       EsFalla: falla,
     });
   }

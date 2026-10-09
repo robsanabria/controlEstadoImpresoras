@@ -15,7 +15,7 @@
  */
 const { poolPromise, sql } = require('../config/db');
 const { ErrorHttp } = require('../middlewares/errores');
-const { CAMPOS_VISITA, CHECKS, FORM_META, ESTADOS } = require('../config/formConfig');
+const { CAMPOS_VISITA, CHECKS, NO_APLICA, FORM_META, ESTADOS } = require('../config/formConfig');
 
 const TABLA = FORM_META.tabla;
 const TABLA_DET = FORM_META.tablaDetalle;
@@ -59,11 +59,16 @@ const memCabeceras = [
   },
 ];
 
-// Detalle de ejemplo: la verificación 2 tiene una falla en la tronera.
+// Detalle de ejemplo: la verificación 2 tiene una falla en la tronera y la
+// balanza no aplica (así se ven los tres estados posibles de una respuesta).
 let memSeqDet = 0;
 const memDetalles = [2, 1].flatMap((verificacionId) =>
   CHECKS.map((c, i) => {
     const falla = verificacionId === 2 && c.id === 'tronera_validacion';
+    const noAplica = verificacionId === 2 && c.id === 'balanza_peso';
+    let problematica = null;
+    if (falla) problematica = 'Pasó una caja con otro artículo y no la rechazó.';
+    if (noAplica) problematica = 'La línea no tiene balanza.';
     return {
       Id: ++memSeqDet,
       VerificacionId: verificacionId,
@@ -72,8 +77,8 @@ const memDetalles = [2, 1].flatMap((verificacionId) =>
       PreguntaId: c.id,
       PreguntaNro: c.nro,
       Pregunta: c.texto,
-      Respuesta: falla ? 'No' : 'Si',
-      Problematica: falla ? 'Pasó una caja con otro artículo y no la rechazó.' : null,
+      Respuesta: falla ? 'No' : noAplica ? NO_APLICA : 'Si',
+      Problematica: problematica,
       EsFalla: falla,
     };
   })
