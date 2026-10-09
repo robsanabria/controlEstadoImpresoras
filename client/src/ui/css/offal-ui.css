@@ -1,0 +1,9 @@
+/* @offal/ui · punto de entrada único.
+   React:   import './ui/css/offal-ui.css' en main.jsx (Vite resuelve los @import).
+   Blazor / Angular: <link rel="stylesheet" href="ui/offal-ui.css"> desde wwwroot / assets.
+   La fuente Inter se carga aparte, en el index.html de cada app:
+   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet"> */
+@import './tokens.css';
+@import './shell.css';
+@import './componentes.css';
+@import './patrones.css';

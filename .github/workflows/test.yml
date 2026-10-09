@@ -1,0 +1,65 @@
+# Build y deploy al ambiente de TEST. Reemplazar verificacion-lectores-offal y VERIFICACIONLECTORES.
+# Se dispara con cada push a develop (merge de un PR de feature).
+# El App Service se llama verificacion-lectores-offal-test y vive en el mismo plan que producción.
+
+name: Deploy TEST - verificacion-lectores-offal
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      PUBLISH_PROFILE: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_VERIFICACIONLECTORES_TEST }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+
+      - name: Instalar backend
+        run: npm ci
+
+      - name: Lint y tests
+        run: |
+          npm run lint --if-present
+          npm test --if-present
+
+      - name: Build frontend
+        run: |
+          cd client
+          npm ci
+          npm run build
+
+      - name: Podar lo que no va al servidor
+        run: |
+          npm prune --omit=dev
+          rm -rf client/node_modules
+
+      - name: Deploy a Azure Web App (TEST)
+        if: ${{ env.PUBLISH_PROFILE != '' }}
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'verificacion-lectores-offal-test'
+          slot-name: 'Production'
+          package: .
+          publish-profile: ${{ env.PUBLISH_PROFILE }}
+
+      - name: Deploy omitido (sin publish profile)
+        if: ${{ env.PUBLISH_PROFILE == '' }}
+        run: echo "::notice::Deploy omitido — falta el secret AZUREAPPSERVICE_PUBLISHPROFILE_VERIFICACIONLECTORES_TEST."

@@ -1,0 +1,140 @@
+/* ============================================================================
+   @offal/ui · componentes.css
+   Primitivas: botón, campos de formulario, pestañas, chips, panel.
+   ============================================================================ */
+
+/* --- botón --- */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: var(--tap); padding: 0 18px;
+  border-radius: var(--radius-s); border: 1px solid var(--line-2);
+  background: var(--panel-2); color: var(--text);
+  font: inherit; font-size: var(--fs-m); font-weight: 700;
+  cursor: pointer; text-decoration: none; white-space: nowrap;
+  transition: border-color 0.15s, background 0.15s, opacity 0.15s;
+}
+.btn:hover { border-color: var(--primary); }
+.btn svg { width: 18px; height: 18px; flex-shrink: 0; }
+.btn-primario { background: var(--primary); border-color: var(--primary); color: var(--sobre-primary); }
+.btn-primario:hover { background: var(--primary-bright); border-color: var(--primary-bright); }
+.btn-fantasma { background: transparent; border-color: transparent; color: var(--primary-bright); }
+.btn-fantasma:hover { background: rgba(178, 119, 70, 0.12); border-color: transparent; }
+.btn-peligro { background: transparent; border-color: rgba(226, 87, 78, 0.5); color: var(--danger-txt); }
+.btn-peligro:hover { background: rgba(226, 87, 78, 0.12); border-color: var(--danger); }
+.btn-icono { width: var(--tap); padding: 0; border-radius: var(--radius-pill); }
+.btn-grande { min-height: var(--tap-l); font-size: var(--fs-l); padding: 0 24px; }
+.btn-chico { min-height: 36px; padding: 0 10px; font-size: var(--fs-s); }   /* sólo dentro de tablas y cabeceras de panel */
+.btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.btn.cargando { position: relative; color: transparent; pointer-events: none; }
+.btn.cargando::after {
+  content: ""; position: absolute; width: 18px; height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.4); border-top-color: #fff; border-radius: 50%;
+  animation: ui-gira 0.8s linear infinite;
+}
+
+/* --- campos --- */
+.campo-grupo { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.campo-etq { font-size: var(--fs-s); font-weight: 600; color: var(--text); }
+.campo-etq .req { color: var(--danger-txt); }
+.campo {
+  width: 100%; min-height: 48px; padding: 0 14px;
+  font: inherit; font-size: var(--fs-l);   /* 16px: con menos, iOS hace zoom al enfocar */
+  color: var(--text); background: var(--bg-2);
+  border: 1px solid var(--line-2); border-radius: var(--radius-s);
+}
+.campo::placeholder { color: var(--muted-2); }
+.campo.mono { font-family: var(--mono); }
+textarea.campo { min-height: 96px; padding: 12px 14px; resize: vertical; }
+select.campo {
+  appearance: none; padding-right: 40px;
+  background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+  background-position: calc(100% - 20px) 50%, calc(100% - 14px) 50%;
+  background-size: 6px 6px; background-repeat: no-repeat;
+}
+.campo-ayuda { font-size: var(--fs-xs); color: var(--muted); }
+.campo-grupo.es-error .campo { border-color: var(--danger); }
+.campo-grupo.es-error .campo-ayuda { color: var(--danger-txt); }
+.opcion { display: flex; align-items: center; gap: 10px; min-height: var(--tap); font-size: var(--fs-m); cursor: pointer; }
+.opcion input { width: 22px; height: 22px; accent-color: var(--primary); margin: 0; }
+
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-4); }
+.form-grid .ancho { grid-column: 1 / -1; }
+.form-acciones { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: var(--sp-5); }
+
+/* --- pestañas --- */
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: clamp(16px, 3vw, 22px); }
+.tab {
+  font: inherit; font-size: var(--fs-s); font-weight: 700; color: var(--muted);
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius-pill);
+  min-height: var(--tap); padding: 0 20px; cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.tab:hover { color: var(--text); border-color: var(--primary); }
+.tab.on { background: var(--primary); color: var(--sobre-primary); border-color: var(--primary); }
+
+/* --- chips de estado (punto de color + color de texto: se distinguen también en gris) --- */
+.chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: var(--fs-xs); font-weight: 700; padding: 4px 10px;
+  border-radius: var(--radius-pill); border: 1px solid var(--line-2);
+  color: var(--muted); background: var(--panel-2); white-space: nowrap;
+}
+.chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.chip-ok { color: var(--success-txt); border-color: rgba(47, 158, 110, 0.45); background: rgba(47, 158, 110, 0.12); }
+.chip-mal { color: var(--danger-txt); border-color: rgba(226, 87, 78, 0.45); background: rgba(226, 87, 78, 0.12); }
+.chip-aviso { color: var(--warn-txt); border-color: rgba(245, 166, 35, 0.45); background: rgba(245, 166, 35, 0.12); }
+.chip-info { color: var(--info-txt); border-color: rgba(38, 182, 217, 0.45); background: rgba(38, 182, 217, 0.12); }
+
+/* --- panel --- */
+.panel { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; }
+.panel-cab { display: flex; align-items: center; gap: 10px; margin: 0 0 14px; flex-wrap: wrap; }
+.panel-titulo { margin: 0; font-size: 15px; font-weight: 700; }
+.panel-sub { color: var(--muted); font-size: var(--fs-s); }
+.panel-cab .der { margin-left: auto; display: flex; gap: 8px; }
+.paso {
+  width: 24px; height: 24px; display: grid; place-items: center; border-radius: 50%;
+  background: rgba(178, 119, 70, 0.18); color: var(--primary-bright); font-size: 12px; font-weight: 700;
+}
+
+/* --- responsive --- */
+@media (max-width: 520px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .form-acciones { flex-direction: column-reverse; }
+  .form-acciones .btn { width: 100%; }
+  .tabs .tab { flex: 1; }
+}
+
+/* ---- Ayuda contextual: botón "?" con una explicación corta ----------------
+   Se abre por hover, por clic/toque y por teclado (ver react/Ayuda.jsx). No es
+   el `title` del navegador: ese no se estila ni aparece en pantallas táctiles. */
+.ayuda { position: relative; display: inline-flex; vertical-align: middle; margin-left: .35rem; }
+
+.ayuda-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 1.15rem; height: 1.15rem; padding: 0;
+  font: 700 .72rem/1 var(--font); color: var(--muted);
+  background: transparent; border: 1px solid var(--line-2); border-radius: 999px;
+  cursor: help;
+}
+.ayuda-btn:hover, .ayuda-btn[aria-expanded="true"] { color: var(--text); border-color: var(--muted); }
+.ayuda-btn:focus-visible { outline: var(--focus); outline-offset: 2px; }
+
+.ayuda-panel {
+  position: absolute; z-index: 40; top: calc(100% + .4rem); left: 50%;
+  transform: translateX(-50%);
+  width: max-content; max-width: min(19rem, 70vw);
+  padding: .55rem .7rem;
+  font: 400 var(--fs-xs)/1.45 var(--font); color: var(--text); text-align: left;
+  white-space: normal; text-transform: none; letter-spacing: normal;
+  background: var(--panel); border: 1px solid var(--line-2);
+  border-radius: var(--radius-s); box-shadow: var(--sombra);
+}
+.ayuda-tit { display: block; margin-bottom: .15rem; }
+
+/* Cerca del borde derecho el panel se saldría de la pantalla: se alinea al botón. */
+.ayuda:last-child .ayuda-panel, .ayuda-der .ayuda-panel { left: auto; right: 0; transform: none; }
+
+/* En celular ocupa el ancho util y se ancla a la izquierda, no al botón. */
+@media (max-width: 560px) {
+  .ayuda-panel { left: 0; right: auto; transform: none; max-width: 78vw; }
+}

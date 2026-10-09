@@ -1,0 +1,74 @@
+# Build y deploy a PRODUCCIÓN. Reemplazar verificacion-lectores-offal y VERIFICACIONLECTORES.
+# Un solo job, sin artifacts (no consume storage de Actions). Corre lint y
+# tests antes de deployar: si fallan, no se deploya.
+#
+# Antes del primer deploy: App Service con Basic auth On (hasta migrar a OIDC),
+# Startup Command = npm start, y el publish profile cargado en
+# GitHub → Settings → Secrets → AZUREAPPSERVICE_PUBLISHPROFILE_VERIFICACIONLECTORES.
+
+name: Deploy PROD - verificacion-lectores-offal
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Sin esto, dos pushes seguidos deployan a la vez y saltan con 409 (OneDeploy Conflict).
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      PUBLISH_PROFILE: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_VERIFICACIONLECTORES }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.x'
+          cache: npm
+          cache-dependency-path: |
+            package-lock.json
+            client/package-lock.json
+
+      - name: Instalar backend
+        run: npm ci
+
+      - name: Lint y tests
+        run: |
+          npm run lint --if-present
+          npm test --if-present
+
+      - name: Build frontend
+        run: |
+          cd client
+          npm ci
+          npm run build
+
+      # Al App Service va solo lo que el servidor necesita: sus dependencias de
+      # producción y client/dist. client/node_modules puede ser enorme (MUI,
+      # jspdf, xlsx: cientos de MB y 100.000 archivos) y mandarlo hace que el
+      # deploy tarde 40 minutos en vez de 4.
+      - name: Podar lo que no va al servidor
+        run: |
+          npm prune --omit=dev
+          rm -rf client/node_modules
+
+      - name: Deploy a Azure Web App
+        if: ${{ env.PUBLISH_PROFILE != '' }}
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'verificacion-lectores-offal'
+          slot-name: 'Production'
+          package: .
+          publish-profile: ${{ env.PUBLISH_PROFILE }}
+
+      - name: Deploy omitido (sin publish profile)
+        if: ${{ env.PUBLISH_PROFILE == '' }}
+        run: echo "::notice::Deploy omitido — falta el secret AZUREAPPSERVICE_PUBLISHPROFILE_VERIFICACIONLECTORES. El build pasó OK."

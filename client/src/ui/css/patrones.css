@@ -1,0 +1,99 @@
+/* ============================================================================
+   @offal/ui · patrones.css
+   Tabla responsiva, estados (vacío / cargando / error), toasts, modal,
+   barra de filtros y alerta en línea.
+   ============================================================================ */
+
+/* --- tabla: scroll propio en escritorio y tablet, tarjetas en celular ---
+   Cada <td> lleva data-etq="Nombre de la columna"; en celular se usa como
+   etiqueta. La celda de acciones lleva class="acciones" y no lleva data-etq.
+   Tablas con subfilas o celdas combinadas no sirven como tarjetas: llevan
+   `.tabla-marco.con-scroll` y en celular conservan el scroll horizontal. */
+.tabla-marco { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); -webkit-overflow-scrolling: touch; }
+.tabla { width: 100%; border-collapse: collapse; font-size: var(--fs-s); }
+.tabla th {
+  text-align: left; padding: 12px 14px; white-space: nowrap;
+  font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+  background: var(--panel); border-bottom: 1px solid var(--line);
+}
+.tabla td { padding: 12px 14px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+.tabla tr:last-child td { border-bottom: 0; }
+.tabla tbody tr:hover td { background: rgba(178, 119, 70, 0.06); }
+.tabla .num { text-align: right; font-variant-numeric: tabular-nums; }
+.tabla .mono { font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.tabla .acciones { text-align: right; white-space: nowrap; }
+
+/* --- estados --- */
+.estado { padding: 40px 20px; text-align: center; color: var(--muted); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.estado-ico { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--panel-2); color: var(--muted); }
+.estado-ico svg { width: 22px; height: 22px; }
+.estado-tit { margin: 0; font-size: 15px; font-weight: 700; color: var(--text); }
+.estado p { margin: 0; font-size: var(--fs-s); max-width: 40ch; }
+.estado.es-error .estado-ico { color: var(--danger-txt); background: rgba(226, 87, 78, 0.12); }
+.spinner { width: 28px; height: 28px; border: 3px solid var(--line-2); border-top-color: var(--primary); border-radius: 50%; animation: ui-gira 0.8s linear infinite; }
+.skeleton {
+  height: 14px; border-radius: 6px;
+  background: linear-gradient(90deg, var(--panel-2) 25%, var(--line) 50%, var(--panel-2) 75%);
+  background-size: 200% 100%; animation: ui-brillo 1.4s infinite;
+}
+
+/* --- toasts: abajo y al centro, encima de todo, no tapan la barra --- */
+.toasts {
+  position: fixed; left: 50%; bottom: calc(16px + env(safe-area-inset-bottom)); transform: translateX(-50%);
+  z-index: 60; display: flex; flex-direction: column; gap: 8px;
+  width: min(420px, calc(100vw - 32px)); pointer-events: none;
+}
+.toast {
+  display: flex; align-items: center; gap: 10px; padding: 12px 14px; pointer-events: auto;
+  border-radius: var(--radius-s); background: var(--panel-2);
+  border: 1px solid var(--line-2); border-left: 4px solid var(--info);
+  box-shadow: var(--sombra); font-size: var(--fs-s); font-weight: 600;
+}
+.toast-ok { border-left-color: var(--success); }
+.toast-mal { border-left-color: var(--danger); }
+.toast-aviso { border-left-color: var(--warn); }
+.toast .cerrar { margin-left: auto; background: none; border: 0; color: var(--muted); font-size: 18px; cursor: pointer; width: 32px; height: 32px; border-radius: 50%; }
+.toast .cerrar:hover { background: rgba(255, 255, 255, 0.06); }
+
+/* --- modal: centrado en escritorio, hoja desde abajo en celular --- */
+.modal-fondo { position: fixed; inset: 0; z-index: 50; background: rgba(0, 0, 0, 0.6); display: grid; place-items: center; padding: 16px; }
+.modal-fondo[hidden] { display: none; }
+.modal-caja {
+  width: min(480px, 100%); padding: 20px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius);
+  box-shadow: var(--sombra);
+}
+.modal-tit { margin: 0 0 6px; font-size: var(--fs-xl); font-weight: 800; }
+.modal-cuerpo { color: var(--muted); font-size: var(--fs-m); line-height: 1.5; }
+.modal-acciones { display: flex; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
+
+/* --- barra de filtros --- */
+.filtros { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; margin-bottom: 12px; }
+.filtros .campo-grupo { flex: 1 1 160px; }
+.filtros .buscar { flex: 2 1 240px; }
+
+/* --- alerta en línea --- */
+.alerta { display: flex; gap: 10px; padding: 12px 14px; border-radius: var(--radius-s); border: 1px solid; font-size: var(--fs-s); }
+.alerta-info { color: var(--info-txt); border-color: rgba(38, 182, 217, 0.4); background: rgba(38, 182, 217, 0.1); }
+.alerta-aviso { color: var(--warn-txt); border-color: rgba(245, 166, 35, 0.4); background: rgba(245, 166, 35, 0.1); }
+.alerta-mal { color: var(--danger-txt); border-color: rgba(226, 87, 78, 0.4); background: rgba(226, 87, 78, 0.1); }
+.alerta-ok { color: var(--success-txt); border-color: rgba(47, 158, 110, 0.4); background: rgba(47, 158, 110, 0.1); }
+
+/* --- responsive --- */
+@media (max-width: 520px) {
+  /* tabla → tarjetas (salvo .con-scroll) */
+  .tabla-marco:not(.con-scroll) { border: 0; overflow: visible; }
+  .tabla-marco:not(.con-scroll) :is(.tabla, .tabla tbody, .tabla tr, .tabla td) { display: block; width: 100%; }
+  .tabla-marco:not(.con-scroll) .tabla thead { display: none; }
+  .tabla-marco:not(.con-scroll) .tabla tr { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: 6px 14px; margin-bottom: 10px; }
+  .tabla-marco:not(.con-scroll) .tabla td { display: flex; justify-content: space-between; gap: 12px; padding: 9px 0; border-bottom: 1px solid var(--line); text-align: left !important; }
+  .tabla-marco:not(.con-scroll) .tabla tr td:last-child { border-bottom: 0; }
+  .tabla-marco:not(.con-scroll) .tabla td::before { content: attr(data-etq); font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); }
+  .tabla-marco:not(.con-scroll) .tabla td.acciones { justify-content: flex-end; }
+  .tabla-marco:not(.con-scroll) .tabla td.acciones::before { content: none; }
+  /* modal → hoja */
+  .modal-fondo { place-items: end center; padding: 0; }
+  .modal-caja { width: 100%; border-radius: var(--radius) var(--radius) 0 0; padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
+  .modal-acciones { flex-direction: column-reverse; }
+  .modal-acciones .btn { width: 100%; min-height: var(--tap-l); }
+}

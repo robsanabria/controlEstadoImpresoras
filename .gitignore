@@ -1,0 +1,9 @@
+node_modules/
+client/node_modules/
+# El frontend se compila en el workflow; no se commitea.
+client/dist/
+.env
+.env.local
+.claude/settings.local.json
+*.log
+.DS_Store

@@ -1,0 +1,98 @@
+/* ============================================================================
+   Sólo lo propio del módulo. La paleta, la barra, los botones, los campos, las
+   tablas y los estados vienen de ui/css (estándar de la plataforma): acá no se
+   escribe ningún color a mano ni otro breakpoint que 520 / 820.
+   ============================================================================ */
+
+.bloque { margin-bottom: var(--sp-4); }
+.conteo { margin: 0 0 var(--sp-3); }
+.lista-errores { flex-direction: column; }
+
+/* ---- Barra de avance: cuántas van y el atajo "anduvo todo bien" ---------- */
+.avance {
+  display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap;
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--panel-2); border: 1px solid var(--line); border-radius: var(--radius);
+}
+.avance-txt { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-m); }
+.avance-acciones { margin-left: auto; display: flex; gap: var(--sp-2); flex-wrap: wrap; }
+
+/* ---- Una pregunta del checklist ----------------------------------------- */
+.chequeo {
+  display: flex; flex-direction: column; gap: var(--sp-3);
+  padding: var(--sp-4) 0; border-top: 1px solid var(--line);
+}
+.panel .chequeo:first-of-type { border-top: 0; padding-top: var(--sp-2); }
+.chequeo.es-falla { border-left: 3px solid var(--danger); padding-left: var(--sp-3); margin-left: -3px; }
+.chequeo-texto { min-width: 0; }
+.chequeo-pregunta { margin: 0; font-size: var(--fs-l); font-weight: 600; }
+/* Número de la pregunta en el formulario original. */
+.chequeo-nro {
+  display: inline-grid; place-items: center; width: 26px; height: 26px; margin-right: 6px;
+  border-radius: 50%; background: var(--panel-2); color: var(--muted);
+  font-size: var(--fs-xs); font-weight: 700; vertical-align: middle;
+}
+
+/* ---- Pads Sí / No: el toque tiene que ser grande y sin apuntar ----------- */
+.pads { display: flex; gap: var(--sp-3); }
+.pad {
+  flex: 1; max-width: 200px; min-height: var(--tap-l);
+  font: inherit; font-size: var(--fs-l); font-weight: 700; color: var(--muted);
+  background: var(--bg-2); border: 1px solid var(--line-2); border-radius: var(--radius-s);
+  cursor: pointer; transition: border-color 0.15s, background 0.15s, color 0.15s;
+}
+.pad:hover { color: var(--text); border-color: var(--muted); }
+/* Respuesta esperada (el lector anduvo) y respuesta de falla. */
+.pad.on-ok {
+  color: var(--success-txt); border-color: var(--success);
+  background: rgba(47, 158, 110, 0.16);
+}
+.pad.on-mal {
+  color: var(--danger-txt); border-color: var(--danger);
+  background: rgba(226, 87, 78, 0.16);
+}
+
+/* ---- Ficha de la cabecera en el detalle ---------------------------------- */
+.ficha {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--sp-3) var(--sp-4); margin: 0 0 var(--sp-4);
+}
+.ficha-item { min-width: 0; }
+.ficha dt {
+  font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.06em;
+  text-transform: uppercase; color: var(--muted); margin-bottom: 2px;
+}
+.ficha dd { margin: 0; font-size: var(--fs-m); overflow-wrap: anywhere; }
+
+/* ---- Respuestas agrupadas por sección (detalle) -------------------------- */
+.grupo-respuestas { margin-bottom: var(--sp-4); }
+.grupo-tit {
+  margin: 0 0 var(--sp-2); font-size: var(--fs-xs); font-weight: 700;
+  letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted);
+}
+.respuesta {
+  display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+  padding: var(--sp-3) 0; border-top: 1px solid var(--line);
+}
+.respuesta-pregunta { margin: 0; flex: 1 1 320px; min-width: 0; font-size: var(--fs-m); }
+.respuesta.es-falla .respuesta-pregunta { font-weight: 600; }
+.respuesta .cita { flex-basis: 100%; }
+
+/* Fila del listado cuyo detalle está abierto. */
+.fila-sel td { background: rgba(178, 119, 70, 0.1); }
+
+/* Bloque de firma del conforme. */
+.conforme {
+  display: flex; flex-direction: column; gap: var(--sp-3);
+  margin-top: var(--sp-4); padding-top: var(--sp-4); border-top: 1px solid var(--line);
+}
+
+/* Comentario escrito por una persona (problemática o conforme). */
+.cita { margin: 4px 0 0; font-style: italic; color: var(--muted); }
+
+@media (max-width: 520px) {
+  .ficha { grid-template-columns: 1fr; }
+  .avance-acciones { margin-left: 0; width: 100%; }
+  .avance-acciones .btn { flex: 1; }
+  .pad { max-width: none; }
+}

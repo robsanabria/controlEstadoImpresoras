@@ -1,0 +1,170 @@
+/* ============================================================================
+   @offal/ui · shell.css
+   Marco de toda aplicación: barra de navegación, cinta de entorno, menú de
+   usuario con salto entre módulos, contenedor de página y pie.
+   El HTML de la barra es el CONTRATO: React (ui/react/Navbar.jsx), Blazor y
+   Angular generan exactamente estas clases y este orden.
+   ============================================================================ */
+
+/* --- barra --- */
+.nav {
+  position: sticky; top: 0; z-index: 30;
+  background: var(--panel);
+  border-bottom: 2px solid var(--primary);
+  padding-top: env(safe-area-inset-top);
+}
+.nav-inner {
+  max-width: var(--maxw); margin: 0 auto; height: var(--nav-h);
+  padding: 0 clamp(16px, 4vw, 28px);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4);
+}
+
+/* marca: logo en círculo blanco + wordmark + separador + nombre del módulo + cinta */
+.brand {
+  display: flex; align-items: center; gap: var(--sp-3);
+  text-decoration: none; color: var(--text);
+  min-width: 0; flex-shrink: 0; min-height: var(--tap); border-radius: var(--radius-s);
+}
+.brand-badge {
+  width: 40px; height: 40px; border-radius: 50%; background: #fff;
+  display: grid; place-items: center; flex-shrink: 0;
+}
+.brand-badge img { width: 64%; height: 64%; object-fit: contain; display: block; }
+.brand-wordmark { height: clamp(16px, 2.2vw, 24px); width: auto; display: block; flex-shrink: 0; }
+.brand-sep { color: var(--muted); font-weight: 400; }
+.brand-sub {
+  font-weight: 700; font-size: 15px; white-space: nowrap;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis;
+}
+
+/* cinta de entorno: sólo se renderiza cuando env !== 'production' */
+.cinta {
+  font-size: var(--fs-xs); font-weight: 800; letter-spacing: 0.12em;
+  padding: 3px 8px; border-radius: 6px; flex-shrink: 0;
+  background: var(--warn); color: #2a1a00;
+}
+.cinta-dev { background: var(--info); color: #06222b; }
+
+/* secciones DEL módulo (Registro / Reportes…): pastillas al lado de la marca en escritorio.
+   Si no entran (un módulo con siete secciones en una ventana angosta), la franja
+   se desplaza a lo ancho en vez de pisarse con el botón Inicio y el usuario. */
+.nav-secciones {
+  display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; margin-left: 4px;
+  overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
+}
+.nav-secciones::-webkit-scrollbar { display: none; }
+.nav-secciones .nav-sec { flex-shrink: 0; }
+.nav-sec {
+  display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 14px;
+  border: 1px solid transparent; border-radius: var(--radius-pill);
+  color: var(--muted); text-decoration: none; font-size: var(--fs-s); font-weight: 600; white-space: nowrap;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.nav-sec:hover { color: var(--text); border-color: var(--line-2); }
+.nav-sec.on { color: var(--text); border-color: var(--primary); background: rgba(178, 119, 70, 0.16); }
+/* en el menú de usuario sólo aparecen cuando la barra no las muestra */
+.user-menu-secciones { display: none; }
+.user-menu-item.on { color: var(--primary-bright); }
+
+/* derecha: botón Inicio + chip de usuario */
+.nav-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.nav-btn {
+  display: inline-flex; align-items: center; gap: 7px;
+  min-height: var(--tap); padding: 0 14px;
+  border: 1px solid var(--line); border-radius: var(--radius-pill);
+  color: var(--text); text-decoration: none;
+  font-size: var(--fs-s); font-weight: 600;
+  transition: border-color 0.15s, background 0.15s;
+}
+.nav-btn svg { width: 18px; height: 18px; }
+.nav-btn:hover { border-color: var(--primary); background: rgba(178, 119, 70, 0.12); }
+
+.user-wrap { position: relative; }
+.user {
+  display: flex; align-items: center; gap: 9px;
+  font: inherit; color: var(--text);
+  min-height: var(--tap); padding: 4px 10px 4px 5px;
+  border: 1px solid var(--line); border-radius: var(--radius-pill);
+  background: transparent; cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.user:hover { border-color: var(--primary); background: rgba(178, 119, 70, 0.10); }
+.avatar {
+  width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%;
+  font-size: 12px; font-weight: 700; color: #fff;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+}
+.user-meta { display: flex; flex-direction: column; line-height: 1.15; text-align: left; }
+.user-name { font-size: var(--fs-s); font-weight: 600; max-width: 16ch; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.user-rol { font-size: var(--fs-xs); color: var(--muted); }
+.user-caret { color: var(--muted); font-size: var(--fs-xs); }
+
+/* menú desplegable */
+.menu-backdrop { position: fixed; inset: 0; z-index: 40; }
+.user-menu {
+  position: absolute; top: calc(100% + 8px); right: 0; z-index: 50;
+  min-width: 250px; padding: 6px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 12px;
+  box-shadow: var(--sombra);
+}
+.user-menu-head {
+  padding: 8px 10px 10px; margin-bottom: 6px; border-bottom: 1px solid var(--line);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.user-menu-name { font-size: var(--fs-s); font-weight: 600; }
+.user-menu-mail { font-size: 12px; color: var(--muted); word-break: break-all; }
+.user-menu-sec {
+  padding: 8px 10px 4px; font-size: var(--fs-xs); font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+}
+.user-menu-item {
+  display: flex; align-items: center; gap: 8px;
+  min-height: var(--tap); padding: 0 10px; border-radius: 8px;
+  text-decoration: none; color: var(--text); font-size: var(--fs-s); font-weight: 600;
+  background: none; border: 0; width: 100%; font-family: inherit; cursor: pointer; text-align: left;
+}
+.user-menu-item:hover { background: rgba(178, 119, 70, 0.12); }
+.user-menu-item .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+.user-menu-item .dot.on { background: var(--primary); }
+.user-menu-item.salir { color: var(--primary-bright); border-top: 1px solid var(--line); margin-top: 6px; border-radius: 0 0 8px 8px; }
+
+/* --- página --- */
+.wrap {
+  max-width: var(--maxw); margin: 0 auto;
+  padding: clamp(20px, 4vw, 36px) clamp(16px, 4vw, 28px) 48px;
+  min-height: calc(100vh - var(--nav-h));
+  display: flex; flex-direction: column;
+}
+.head { margin-bottom: var(--sp-5); }
+.overline {
+  margin: 0 0 6px; color: var(--primary-bright);
+  font-size: var(--fs-xs); font-weight: 700; letter-spacing: 0.2em; text-transform: uppercase;
+}
+.head h1 { margin: 0; font-size: var(--fs-h1); font-weight: 800; letter-spacing: -0.02em; }
+.lead { margin: 8px 0 0; color: var(--muted); font-size: var(--fs-m); max-width: 62ch; }
+.pie { margin-top: auto; padding-top: 40px; color: var(--muted); font-size: 12px; text-align: center; }
+
+/* --- responsive --- */
+/* Guarda interna de la barra (no es un breakpoint de página): con secciones y una
+   ventana angosta, el wordmark cede su lugar a las pastillas; el logo y el nombre
+   del módulo alcanzan para identificar dónde se está. */
+@media (max-width: 1100px) {
+  .nav-inner:has(.nav-secciones) .brand-wordmark,
+  .nav-inner:has(.nav-secciones) .brand-sep { display: none; }
+}
+@media (max-width: 820px) {
+  /* Las secciones del módulo pasan al menú de usuario. */
+  .nav-secciones { display: none; }
+  .user-menu-secciones { display: block; }
+  /* En tablet y celular se esconde el wordmark y queda el nombre del MÓDULO.
+     Quien está en planta con varias apps abiertas necesita saber en cuál está. */
+  .brand-wordmark, .brand-sep { display: none; }
+  .brand-sub { font-size: 16px; }
+}
+@media (max-width: 520px) {
+  :root { --nav-h: 56px; }
+  .brand-badge { width: 34px; height: 34px; }
+  .user-meta, .user-caret, .nav-btn-txt { display: none; }
+  .nav-btn { width: var(--tap); padding: 0; justify-content: center; }
+  .user { padding: 4px; }
+}
