@@ -179,8 +179,9 @@ Falta:
 - [ ] Crear el usuario contenido `app_lectores` en `controletiquetas` y correr
       `db/migrations/001-*.sql`. Hasta que esté, la app levanta pero `/health`
       responde 503 y no se puede cargar nada.
-- [ ] Alta de la app `lectores` en `acceso.Apps` y `acceso.Permisos` + roles por
-      usuario; después pasar `LECTORES_REQUIRE_PERMISSION=true`.
+- [ ] Alta de la app `lectores` en `acceso.Apps` y `acceso.Permisos`: completar
+      los mails en [`db/acceso-alta-lectores.sql`](db/acceso-alta-lectores.sql)
+      y correrlo. Después pasar `LECTORES_REQUIRE_PERMISSION=true`.
 - [ ] Quitar `proximamente: true` de la tarjeta en `portal-offal/config/apps.js`
       y setear `URL_VERIFICACION_LECTORES`.
 

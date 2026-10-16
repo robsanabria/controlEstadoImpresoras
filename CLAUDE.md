@@ -85,5 +85,6 @@ Sin base: `MODO_DEMO=true` + `ALLOW_DEV_LOGIN=true` (ver README).
   la migración 001. Sin eso la app levanta pero `/health` da 503.
 - Alta de `lectores` en `acceso` y después `LECTORES_REQUIRE_PERMISSION=true`.
 - Tarjeta del portal (`portal-offal/config/apps.js`, sacar `proximamente`).
+- Dominio productivo: `https://verificacion.offalexpsa.ar` (ya con certificado).
 - El `turno` es obligatorio porque firma el encargado de ese turno. Si algún día
   el conforme deja de depender del turno, se afloja en `CAMPOS_VISITA`.
