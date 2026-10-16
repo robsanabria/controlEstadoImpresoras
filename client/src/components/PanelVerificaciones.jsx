@@ -19,6 +19,7 @@ export default function PanelVerificaciones({
   conBusqueda = false,
   vacioTxt = 'No hay verificaciones.',
   puedeFirmarSector,
+  onPedirConforme,
 }) {
   const [q, setQ] = useState('');
   const [exportando, setExportando] = useState(false);
@@ -135,6 +136,7 @@ export default function PanelVerificaciones({
           config={config}
           onFirmar={onFirmar}
           puedeFirmarSector={puedeFirmarSector(seleccionada.sector)}
+          onPedirConforme={onPedirConforme}
         />
       )}
     </div>

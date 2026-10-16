@@ -92,6 +92,33 @@
 /* Comentario escrito por una persona (problemática o conforme). */
 .cita { margin: 4px 0 0; font-style: italic; color: var(--muted); }
 
+/* ---- QR del conforme ----------------------------------------------------
+   El QR va sobre blanco literal y con borde claro: la cámara necesita el
+   contraste real, así que no sigue el tema oscuro. Es la única excepción a
+   "ningún color a mano" del módulo, y por eso está acotada a estas clases.
+   -------------------------------------------------------------------------- */
+.qr-caja {
+  display: grid; place-items: center; min-height: 240px;
+  margin: var(--sp-3) 0; padding: var(--sp-3);
+  background: #fff; border: 1px solid var(--line); border-radius: var(--radius);
+}
+.qr-img { display: block; width: 100%; max-width: 280px; height: auto; image-rendering: pixelated; }
+
+.qr-link {
+  display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap;
+  margin-bottom: var(--sp-3);
+}
+.qr-link code {
+  flex: 1 1 240px; min-width: 0; overflow-wrap: anywhere;
+  font-size: var(--fs-xs); color: var(--muted);
+}
+
+/* Spinner en línea, para "Esperando la firma…". */
+.spinner-chico {
+  display: inline-block; width: 14px; height: 14px; border-width: 2px;
+  vertical-align: -2px; margin-right: 6px;
+}
+
 @media (max-width: 520px) {
   .ficha { grid-template-columns: 1fr; }
   .avance-acciones { margin-left: 0; width: 100%; }

@@ -37,7 +37,9 @@ export function EstadoChip({ estado }) {
  * Nadie elige "a nombre de quién" firma: el firmante es el usuario de la sesión
  * y el servidor vuelve a validar el permiso y el sector.
  */
-export default function DetalleVerificacion({ verificacion, config, onFirmar, puedeFirmarSector }) {
+export default function DetalleVerificacion({
+  verificacion, config, onFirmar, puedeFirmarSector, onPedirConforme,
+}) {
   const { campos_visita: camposVisita, secciones, no_aplica: noAplica } = config;
   const [comentario, setComentario] = useState('');
   const [enviando, setEnviando] = useState(false);
@@ -158,10 +160,21 @@ export default function DetalleVerificacion({ verificacion, config, onFirmar, pu
               </div>
             </>
           ) : (
-            <div className="alerta alerta-info">
-              Esta verificación espera el conforme del encargado de {verificacion.sector}. Tu usuario no
-              puede firmarla.
-            </div>
+            <>
+              <div className="alerta alerta-info">
+                Esta verificación espera el conforme del encargado de {verificacion.sector}. Tu usuario no
+                puede firmarla.
+              </div>
+              {/* Si el encargado no estaba cuando se cargó, acá se vuelve a
+                  sacar el QR para que firme desde su celular. */}
+              {onPedirConforme && (
+                <div className="form-acciones">
+                  <button className="btn btn-primario" onClick={() => onPedirConforme(verificacion)}>
+                    Pedirle el conforme al encargado
+                  </button>
+                </div>
+              )}
+            </>
           )}
         </div>
       ) : (

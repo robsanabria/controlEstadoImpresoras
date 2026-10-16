@@ -48,6 +48,15 @@ Sin base: `MODO_DEMO=true` + `ALLOW_DEV_LOGIN=true` (ver README).
   y no cuenta como problema; el campo queda opcional para aclarar por qué.
 - **El conforme no se escribe, se firma.** El firmante sale siempre de
   `req.user` (Easy Auth). Ningún endpoint acepta "firmado por" desde el body.
+- **El QR son dos celulares.** El de Sistemas recorre la línea; el encargado
+  firma desde el suyo, entrando por `/firmar/<id>` (ver `client/src/lib/ruta.js`).
+  Ese link **no es un token**: sólo lleva el id, y el servidor revalida rol y
+  sector igual. No agregarle firmas por link ni tokens de un solo uso sin pensar
+  qué pasa si el QR se saca por la ventana.
+- **La ruta `/firmar/:id` la resuelve el cliente**, no el servidor: el
+  `app.get('*')` de `index.js` sirve `index.html` para cualquier path y el SPA
+  lee `window.location.pathname`. Si algún día se suman más rutas profundas,
+  conviene un router en serio en vez de seguir parseando a mano.
 - **Quien carga no firma** (`PERMITIR_AUTOFIRMA`), y el encargado sólo firma su
   sector (`config/roles.js`). Las dos reglas se verifican en el servidor: el
   cliente sólo oculta botones.

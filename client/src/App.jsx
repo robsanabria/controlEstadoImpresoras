@@ -6,6 +6,9 @@ import Navbar from './ui/Navbar';
 import Toasts, { avisar } from './ui/Toasts';
 import VerificacionForm from './components/VerificacionForm';
 import PanelVerificaciones from './components/PanelVerificaciones';
+import PedirConforme from './components/PedirConforme';
+import PantallaFirma from './components/PantallaFirma';
+import { idDeLaUrl, salirDeLaFirma } from './lib/ruta';
 
 /** CSV plano: una fila por chequeo, con la numeración original del formulario. */
 function aCSV(config, filas) {
@@ -48,6 +51,10 @@ export default function App() {
   const [cargando, setCargando] = useState(true);
   const [refrescando, setRefrescando] = useState(false);
   const [error, setError] = useState(null);
+  // El encargado llega por el QR a /firmar/<id>: se lee una sola vez, al entrar.
+  const [firmaId, setFirmaId] = useState(() => idDeLaUrl());
+  // Verificación para la que estamos mostrando el QR del conforme.
+  const [pidiendoConforme, setPidiendoConforme] = useState(null);
 
   const permisos = usuario?.permisos || { cargar: false, firmarSectores: [] };
 
@@ -92,11 +99,12 @@ export default function App() {
     }
   }, [recargarListas]);
 
-  // Carga las listas al entrar por primera vez a una vista de listado.
+  // Carga las listas al entrar por primera vez a una vista de listado. En la
+  // pantalla de firma no hace falta: ahí se ve una sola verificación.
   useEffect(() => {
-    if (!config || vista === 'cargar') return;
+    if (!config || firmaId || vista === 'cargar') return;
     refrescar();
-  }, [vista, config, refrescar]);
+  }, [vista, config, firmaId, refrescar]);
 
   async function abrir(id) {
     if (seleccionada?.Id === id) { setSeleccionada(null); return; }
@@ -112,10 +120,10 @@ export default function App() {
 
   async function onCrear(payload) {
     const creada = await crearVerificacion(payload);
-    avisar(
-      `Verificación #${creada.Id} guardada. Pendiente del conforme del encargado de ${creada.sector}.`,
-      'ok'
-    );
+    avisar(`Verificación #${creada.Id} guardada.`, 'ok');
+    // Lo que sigue es pedirle la firma al encargado, que está al lado: se abre
+    // el QR en el acto en vez de dejar la verificación esperando en una lista.
+    setPidiendoConforme(creada);
     recargarListas().catch(() => {});
     return creada;
   }
@@ -130,7 +138,10 @@ export default function App() {
           : `Verificación #${id} marcada como observada.`,
         decision === 'conforme' ? 'ok' : 'aviso'
       );
-      await recargarListas();
+      // La firma ya quedó: si refrescar las listas falla (el encargado firma
+      // desde el celular, con la red de la planta) no se le puede decir que no
+      // firmó, así que este error no sube.
+      recargarListas().catch(() => {});
     } catch (err) {
       // Si otro la resolvió primero, refrescamos para mostrar el estado real.
       if (err.code === 'CONFLICTO') {
@@ -188,6 +199,15 @@ export default function App() {
         claveActual="lectores"
       />
       <main className="wrap" id="contenido">
+        {firmaId ? (
+          <PantallaFirma
+            id={firmaId}
+            config={config}
+            onFirmar={onFirmar}
+            onSalir={() => { salirDeLaFirma(); setFirmaId(null); }}
+          />
+        ) : (
+          <>
         <div className="head">
           <p className="overline">Sistemas · Planta</p>
           <h1>{config?.meta?.titulo}</h1>
@@ -221,6 +241,7 @@ export default function App() {
             refrescando={refrescando}
             vacioTxt="No hay verificaciones esperando conforme."
             puedeFirmarSector={puedeFirmarSector}
+            onPedirConforme={setPidiendoConforme}
           />
         )}
 
@@ -238,11 +259,22 @@ export default function App() {
             conBusqueda
             vacioTxt="Todavía no hay verificaciones cargadas."
             puedeFirmarSector={puedeFirmarSector}
+            onPedirConforme={setPidiendoConforme}
           />
+        )}
+          </>
         )}
 
         <footer className="pie"><span>Offal · Verificación de Lectores</span></footer>
       </main>
+
+      {pidiendoConforme && (
+        <PedirConforme
+          verificacion={pidiendoConforme}
+          onCerrar={() => setPidiendoConforme(null)}
+          onFirmada={() => { recargarListas().catch(() => {}); }}
+        />
+      )}
       <Toasts />
     </>
   );

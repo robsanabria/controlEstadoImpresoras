@@ -38,6 +38,36 @@ Sistemas carga  →  Pendiente  →  el encargado firma   →  Conforme
                                  el encargado observa →  Observado
 ```
 
+### El QR: dos celulares, no uno
+
+En la línea, el que recorre con el celular es **el de Sistemas**, y el encargado
+sólo da el conforme. Pero el firmante sale siempre de la sesión de Easy Auth, así
+que el encargado no puede firmar en el teléfono de Sistemas: sería la firma de
+Sistemas con otro nombre.
+
+El puente son dos celulares y un QR:
+
+```
+Sistemas guarda  →  le aparece el QR  →  el encargado lo escanea con SU celular
+                                      →  entra con su usuario (SSO) y firma
+                    la pantalla de Sistemas se entera sola y muestra quién firmó
+```
+
+- El QR codifica `https://verificacion.offalexpsa.ar/firmar/<id>`, y esa pantalla
+  muestra **sólo esa verificación**: el encargado llega de la cámara, lee y
+  decide, sin pestañas ni listados.
+- **El link no es una credencial.** Lleva únicamente el número de verificación:
+  quien lo abra tiene que autenticarse igual y tener rol de encargado del sector.
+  Que el QR se filtre no habilita a nadie a firmar.
+- Mientras el QR está en pantalla, la app de Sistemas pregunta cada 4 segundos si
+  ya firmaron, hasta 10 minutos. Si el encargado no estaba, la verificación queda
+  pendiente y el QR se vuelve a sacar desde el detalle, con
+  **“Pedirle el conforme al encargado”**.
+- Si el encargado no tiene el celular a mano, el mismo link se copia con un botón
+  y se le manda por donde sea.
+
+### Las reglas de la firma
+
 - **La firma es la identidad de la sesión.** El firmante sale de la cabecera de
   Easy Auth, nunca de un campo del formulario: nadie firma en nombre de otro.
   Queda registrado nombre, correo, fecha y hora, y el comentario.
