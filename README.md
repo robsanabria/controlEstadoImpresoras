@@ -74,7 +74,7 @@ cuestionario más adelante no reescribe lo que ya se firmó.
 ## Correr en local
 
 ```bash
-cp .env.example .env     # apuntar a controletiquetas-test
+cp .env.example .env     # o MODO_DEMO=true: no hay base de test
 npm ci && npm --prefix client ci
 npm run client:build     # compila el frontend
 npm start                # http://localhost:3008
@@ -151,20 +151,42 @@ client/src/ui/               copia de plataforma/ui — NO editar acá
 `client/src/ui` se actualiza con `bash scripts/ui-sync.sh ../controlEstadoImpresoras client`
 desde el repo `plataforma`, y se verifica con `--check`.
 
-## Deploy (Azure) — pendiente de Infra
+## Deploy (Azure)
 
-- [ ] App Service **`verificacion-lectores-offal`** (Node 20+, Linux), Basic auth On,
-      Startup Command `npm start`.
-- [ ] Secret `AZUREAPPSERVICE_PUBLISHPROFILE_VERIFICACIONLECTORES` en GitHub
-      (y `..._TEST` para el App Service de test).
-- [ ] Easy Auth contra el mismo registro de Entra (SSO con las otras apps).
-- [ ] Variables de entorno del App Service (DB_*, APP_ENV; **sin** ALLOW_DEV_LOGIN
-      ni MODO_DEMO).
-- [ ] Correr `db/migrations/001-*.sql` contra `controletiquetas`.
-- [ ] Alta de la app `lectores` en `acceso.Apps` y `acceso.Permisos` + roles por usuario.
-- [ ] Sumar la tarjeta del módulo al portal (`portal-offal/config/apps.js`).
+App Service **`verificacionlectores`**, RG `GeneralApps`, plan
+`ASP-GeneralApps-b922` (compartido con `panol`: sumar la app no costó plan nuevo).
+Host: `verificacionlectores-apbga2brg9c3fpce.westus3-01.azurewebsites.net`.
 
-Push a `main` deploya a producción; push a `develop`, al App Service de test.
+Hecho:
+
+- [x] App Service: Linux `NODE|24-lts`, Startup Command `npm start`,
+      Health check `/health`, HTTPS only, TLS 1.2, Always On.
+- [x] SCM basic auth On. El publish profile del portal vuelve **tapado con
+      `REDACTED`** igual que en `presupuesto` y `camiones`, así que el secret se
+      armó a mano desde `az webapp deployment list-publishing-credentials` con
+      `publishMethod="ZipDeploy"`.
+- [x] Secret `AZUREAPPSERVICE_PUBLISHPROFILE_VERIFICACIONLECTORES` en GitHub.
+- [x] Easy Auth v2 con registro propio en Entra (`verificacionlectores`,
+      AzureADMyOrg), token store On y `excludedPaths: ["/health"]` para que el
+      probe no quede tapado por el login.
+- [x] App Settings: `APP_ENV`/`NODE_ENV=production`, `DB_*` (usuario
+      `app_lectores`), `LECTORES_REQUIRE_PERMISSION=false`,
+      `PERMITIR_AUTOFIRMA=false`, `CORS_ORIGINS` vacío. **Sin** `ALLOW_DEV_LOGIN`
+      ni `MODO_DEMO`.
+
+Falta:
+
+- [ ] Crear el usuario contenido `app_lectores` en `controletiquetas` y correr
+      `db/migrations/001-*.sql`. Hasta que esté, la app levanta pero `/health`
+      responde 503 y no se puede cargar nada.
+- [ ] Alta de la app `lectores` en `acceso.Apps` y `acceso.Permisos` + roles por
+      usuario; después pasar `LECTORES_REQUIRE_PERMISSION=true`.
+- [ ] Quitar `proximamente: true` de la tarjeta en `portal-offal/config/apps.js`
+      y setear `URL_VERIFICACION_LECTORES`.
+
+Push a `main` deploya a producción. **No hay ambiente de test**: no existe el
+App Service `-test`, ni la base `controletiquetas-test`, ni la rama `develop`.
+`test.yml` queda como molde y saltea el deploy.
 Mientras no exista el secret, el workflow compila y saltea el deploy.
 
 > El repositorio se llama `controlEstadoImpresoras` porque nació para otro

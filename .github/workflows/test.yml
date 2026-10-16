@@ -1,8 +1,8 @@
-# Build y deploy al ambiente de TEST. Reemplazar verificacion-lectores-offal y VERIFICACIONLECTORES.
-# Se dispara con cada push a develop (merge de un PR de feature).
-# El App Service se llama verificacion-lectores-offal-test y vive en el mismo plan que producción.
+# Build y deploy al ambiente de TEST. HOY NO EXISTE: no hay App Service -test ni base
+# controletiquetas-test, y el repo no tiene rama develop. Queda como molde.
+# El App Service se llama verificacionlectores-test y vive en el mismo plan que producción.
 
-name: Deploy TEST - verificacion-lectores-offal
+name: Deploy TEST - verificacionlectores
 
 on:
   push:
@@ -51,15 +51,31 @@ jobs:
           npm prune --omit=dev
           rm -rf client/node_modules
 
+      # Ver el comentario de prod.yml: `if: env.PUBLISH_PROFILE != ''` evalúa
+      # vacío aunque el secret esté cargado. Se decide con GITHUB_OUTPUT.
+      - name: ¿Hay publish profile?
+        id: pp
+        run: |
+          if [ -n "$PUBLISH_PROFILE" ]; then
+            echo "hay=true" >> "$GITHUB_OUTPUT"
+            echo "Publish profile presente (${#PUBLISH_PROFILE} caracteres)."
+          else
+            echo "hay=false" >> "$GITHUB_OUTPUT"
+            echo "Publish profile ausente."
+          fi
+
       - name: Deploy a Azure Web App (TEST)
-        if: ${{ env.PUBLISH_PROFILE != '' }}
+        if: steps.pp.outputs.hay == 'true'
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'verificacion-lectores-offal-test'
+          app-name: 'verificacionlectores-test'
           slot-name: 'Production'
           package: .
           publish-profile: ${{ env.PUBLISH_PROFILE }}
 
+      # Hoy NO existe ambiente de test (ni App Service -test ni base
+      # controletiquetas-test), así que acá el skip es esperado y no falla.
+      # En prod.yml el mismo caso sí falla: ahí un "omitido" en verde engaña.
       - name: Deploy omitido (sin publish profile)
-        if: ${{ env.PUBLISH_PROFILE == '' }}
-        run: echo "::notice::Deploy omitido — falta el secret AZUREAPPSERVICE_PUBLISHPROFILE_VERIFICACIONLECTORES_TEST."
+        if: steps.pp.outputs.hay != 'true'
+        run: echo "::notice::Deploy omitido — no hay ambiente de test. El build pasó OK."

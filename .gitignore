@@ -7,3 +7,7 @@ client/dist/
 .claude/settings.local.json
 *.log
 .DS_Store
+
+# Scripts locales con secretos (alta de usuarios SQL). No se commitean.
+*.local.sql
+*.local.txt

@@ -1,4 +1,4 @@
-# Build y deploy a PRODUCCIÓN. Reemplazar verificacion-lectores-offal y VERIFICACIONLECTORES.
+# Build y deploy a PRODUCCIÓN del App Service verificacionlectores (RG GeneralApps).
 # Un solo job, sin artifacts (no consume storage de Actions). Corre lint y
 # tests antes de deployar: si fallan, no se deploya.
 #
@@ -6,7 +6,7 @@
 # Startup Command = npm start, y el publish profile cargado en
 # GitHub → Settings → Secrets → AZUREAPPSERVICE_PUBLISHPROFILE_VERIFICACIONLECTORES.
 
-name: Deploy PROD - verificacion-lectores-offal
+name: Deploy PROD - verificacionlectores
 
 on:
   push:
@@ -60,15 +60,34 @@ jobs:
           npm prune --omit=dev
           rm -rf client/node_modules
 
+      # `if: env.PUBLISH_PROFILE != ''` NO sirve como guard: evalúa vacío aunque
+      # el secret esté cargado, el deploy se saltea y el job igual queda en
+      # verde. Hay que decidirlo en un step que escriba a GITHUB_OUTPUT.
+      # Loguea el largo, nunca el valor.
+      - name: ¿Hay publish profile?
+        id: pp
+        run: |
+          if [ -n "$PUBLISH_PROFILE" ]; then
+            echo "hay=true" >> "$GITHUB_OUTPUT"
+            echo "Publish profile presente (${#PUBLISH_PROFILE} caracteres)."
+          else
+            echo "hay=false" >> "$GITHUB_OUTPUT"
+            echo "Publish profile ausente."
+          fi
+
       - name: Deploy a Azure Web App
-        if: ${{ env.PUBLISH_PROFILE != '' }}
+        if: steps.pp.outputs.hay == 'true'
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'verificacion-lectores-offal'
+          app-name: 'verificacionlectores'
           slot-name: 'Production'
           package: .
           publish-profile: ${{ env.PUBLISH_PROFILE }}
 
-      - name: Deploy omitido (sin publish profile)
-        if: ${{ env.PUBLISH_PROFILE == '' }}
-        run: echo "::notice::Deploy omitido — falta el secret AZUREAPPSERVICE_PUBLISHPROFILE_VERIFICACIONLECTORES. El build pasó OK."
+      # Sin secret no se deploya, y el job FALLA: un "omitido" en verde ya nos
+      # hizo creer que había deployado cuando no.
+      - name: Falta el publish profile
+        if: steps.pp.outputs.hay != 'true'
+        run: |
+          echo "::error::Falta el secret AZUREAPPSERVICE_PUBLISHPROFILE_VERIFICACIONLECTORES. El build pasó, pero NO se deployó."
+          exit 1

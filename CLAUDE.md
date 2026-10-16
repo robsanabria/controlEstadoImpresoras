@@ -13,13 +13,15 @@ la verificación) y los encargados de turno de Insumos y Empaque (dan el conform
 - React 18 + Vite en `client/`. Llama a rutas relativas `/api`.
 - Azure SQL compartida `controletiquetas`, esquema propio **`sistemas`**. Padrón central `acceso`.
 - Identidad: Azure Easy Auth (Entra ID). Autorización: `acceso.Permisos` con `App = 'lectores'`.
-- Deploy: GitHub Actions → App Service `verificacion-lectores-offal` (prod, rama `main`)
-  y `verificacion-lectores-offal-test` (test, rama `develop`).
+- Deploy: GitHub Actions → App Service `verificacionlectores` (RG `GeneralApps`,
+  plan `ASP-GeneralApps-b922`), prod, rama `main`. **No hay ambiente de test**:
+  no existe el App Service `-test`, ni `controletiquetas-test`, ni la rama
+  `develop`; todo el DDL va a producción.
 
 ## Cómo correr
 
 ```bash
-cp .env.example .env    # apuntar a controletiquetas-test
+cp .env.example .env    # o MODO_DEMO=true: no hay base de test
 npm ci && npm --prefix client ci
 npm run dev             # backend :3008
 npm run client          # Vite :5178, proxy /api
@@ -79,6 +81,9 @@ Sin base: `MODO_DEMO=true` + `ALLOW_DEV_LOGIN=true` (ver README).
 
 ## Pendientes
 
-- Infra: App Service, Easy Auth, migración 001 y alta de `lectores` en `acceso`.
+- Base: crear el usuario contenido `app_lectores` en `controletiquetas` y correr
+  la migración 001. Sin eso la app levanta pero `/health` da 503.
+- Alta de `lectores` en `acceso` y después `LECTORES_REQUIRE_PERMISSION=true`.
+- Tarjeta del portal (`portal-offal/config/apps.js`, sacar `proximamente`).
 - El `turno` es obligatorio porque firma el encargado de ese turno. Si algún día
   el conforme deja de depender del turno, se afloja en `CAMPOS_VISITA`.
