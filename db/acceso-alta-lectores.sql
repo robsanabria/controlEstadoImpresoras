@@ -50,6 +50,25 @@ INSERT INTO @carga (Email) VALUES
 ;
 
 -- ---------------------------------------------------------------------------
+-- 2.5) Alta en el padrón de los encargados que firman.
+--      Martín Maciel y Sergio Vega tienen cuenta en Entra (verificado), pero NO
+--      estaban en acceso.Usuarios, y sin eso el módulo les da 403 ("no figura
+--      en el padrón") apenas entran por el QR.
+--      El módulo busca por Email, así que alcanza con mail, nombre y Activo:
+--      EntraObjectId y PasswordHash van NULL, igual que las altas recientes.
+-- ---------------------------------------------------------------------------
+MERGE acceso.Usuarios AS d
+USING (VALUES
+    (N'martin.maciel@offal.com.ar', N'Martin Maciel'),
+    (N'sergio.vega@offal.com.ar',   N'Sergio Vega')
+) AS o (Email, Nombre) ON d.Email = o.Email
+WHEN NOT MATCHED THEN
+    INSERT (Email, Nombre, Activo, FechaAlta)
+    VALUES (o.Email, o.Nombre, 1, SYSUTCDATETIME())
+WHEN MATCHED AND d.Activo = 0 THEN
+    UPDATE SET d.Activo = 1, d.FechaModif = SYSUTCDATETIME();
+
+-- ---------------------------------------------------------------------------
 -- 3) Quiénes FIRMAN el conforme.
 --    Roles posibles (ver config/roles.js):
 --      ENCARGADO            → firma los dos sectores
@@ -60,15 +79,26 @@ INSERT INTO @carga (Email) VALUES
 --    firma lo que cargó él mismo. Si la misma persona está en @carga y es la
 --    única que firma, las verificaciones quedan Pendiente para siempre.
 -- ---------------------------------------------------------------------------
---    VACÍO A PROPÓSITO: todavía no está decidido CÓMO firma el encargado si el
---    celular es el de Sistemas (ver "El circuito del conforme" en el README).
---    Cuando se decida, agregar acá los mails de los encargados de Insumos y
---    Empaque con su rol y volver a correr el script.
+--    ⚠ FALTA CONFIRMAR CUÁL ES DE CADA SECTOR. Los encargados son Martín Maciel
+--    y Sergio Vega, pero no está dicho quién lleva Insumos y quién Empaque, y el
+--    rol define qué puede firmar cada uno: con el par cambiado, cada uno ve
+--    "no podés firmar verificaciones de ese sector" y el circuito se traba.
+--    Descomentar el par correcto y borrar el otro.
 DECLARE @firma TABLE (Email NVARCHAR(255), Rol VARCHAR(50), PRIMARY KEY (Email, Rol));
 INSERT INTO @firma (Email, Rol)
 SELECT Email, Rol FROM (VALUES
-    -- (N'encargado.insumos@offal.com.ar', 'ENCARGADO INSUMOS'),
-    -- (N'encargado.empaque@offal.com.ar', 'ENCARGADO EMPAQUE'),
+    -- Opción A: Maciel en Insumos, Vega en Empaque
+    -- (N'martin.maciel@offal.com.ar', 'ENCARGADO INSUMOS'),
+    -- (N'sergio.vega@offal.com.ar',   'ENCARGADO EMPAQUE'),
+
+    -- Opción B: Vega en Insumos, Maciel en Empaque
+    -- (N'sergio.vega@offal.com.ar',   'ENCARGADO INSUMOS'),
+    -- (N'martin.maciel@offal.com.ar', 'ENCARGADO EMPAQUE'),
+
+    -- Si los dos firman los dos sectores, en vez de lo de arriba va:
+    -- (N'martin.maciel@offal.com.ar', 'ENCARGADO'),
+    -- (N'sergio.vega@offal.com.ar',   'ENCARGADO'),
+
     (N'', '')
 ) v (Email, Rol) WHERE Email <> N'';
 
