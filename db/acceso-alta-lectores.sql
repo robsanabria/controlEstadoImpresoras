@@ -79,28 +79,14 @@ WHEN MATCHED AND d.Activo = 0 THEN
 --    firma lo que cargó él mismo. Si la misma persona está en @carga y es la
 --    única que firma, las verificaciones quedan Pendiente para siempre.
 -- ---------------------------------------------------------------------------
---    ⚠ FALTA CONFIRMAR CUÁL ES DE CADA SECTOR. Los encargados son Martín Maciel
---    y Sergio Vega, pero no está dicho quién lleva Insumos y quién Empaque, y el
---    rol define qué puede firmar cada uno: con el par cambiado, cada uno ve
---    "no podés firmar verificaciones de ese sector" y el circuito se traba.
---    Descomentar el par correcto y borrar el otro.
+--    El rol define QUÉ SECTOR firma cada uno (ver ROLES_FIRMA en
+--    config/roles.js). Si el par queda cambiado, los dos reciben "no podés
+--    firmar verificaciones de ese sector" y el circuito se traba en la firma.
 DECLARE @firma TABLE (Email NVARCHAR(255), Rol VARCHAR(50), PRIMARY KEY (Email, Rol));
-INSERT INTO @firma (Email, Rol)
-SELECT Email, Rol FROM (VALUES
-    -- Opción A: Maciel en Insumos, Vega en Empaque
-    -- (N'martin.maciel@offal.com.ar', 'ENCARGADO INSUMOS'),
-    -- (N'sergio.vega@offal.com.ar',   'ENCARGADO EMPAQUE'),
-
-    -- Opción B: Vega en Insumos, Maciel en Empaque
-    -- (N'sergio.vega@offal.com.ar',   'ENCARGADO INSUMOS'),
-    -- (N'martin.maciel@offal.com.ar', 'ENCARGADO EMPAQUE'),
-
-    -- Si los dos firman los dos sectores, en vez de lo de arriba va:
-    -- (N'martin.maciel@offal.com.ar', 'ENCARGADO'),
-    -- (N'sergio.vega@offal.com.ar',   'ENCARGADO'),
-
-    (N'', '')
-) v (Email, Rol) WHERE Email <> N'';
+INSERT INTO @firma (Email, Rol) VALUES
+    (N'sergio.vega@offal.com.ar',   'ENCARGADO INSUMOS'),
+    (N'martin.maciel@offal.com.ar', 'ENCARGADO EMPAQUE')
+;
 
 -- ---------------------------------------------------------------------------
 -- 4) Aplicar. Un usuario queda con un solo rol por app, así que si ya tenía
