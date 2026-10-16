@@ -33,11 +33,20 @@ ELSE
 --    sector, así que no hay forma de sacarlos con una consulta.
 --    Un mail que no exista en acceso.Usuarios se informa al final y se ignora.
 -- ---------------------------------------------------------------------------
+-- El equipo de Sistemas al 2026-10-16. Los diez están en el padrón y activos
+-- (verificado contra acceso.Usuarios).
 DECLARE @carga TABLE (Email NVARCHAR(255) PRIMARY KEY);
 INSERT INTO @carga (Email) VALUES
-    (N'gustavo.cardozo@offal.com.ar')
-    -- , (N'nombre.apellido@offal.com.ar')
-    -- , (N'nombre.apellido@offal.com.ar')
+    (N'gustavo.cardozo@offal.com.ar'),    -- #14
+    (N'tobias.santillan@offal.com.ar'),   -- #53
+    (N'roberto.sanabria@offal.com.ar'),   -- #1
+    (N'andrea.cardozo@offal.com.ar'),     -- #12
+    (N'matias.juarez@offal.com.ar'),      -- #10
+    (N'juan.penalba@offal.com.ar'),       -- #9
+    (N'nicolas.gutierrez@offal.com.ar'),  -- #8
+    (N'norberto.haunau@offal.com.ar'),    -- #6
+    (N'luis.arancibia@offal.com.ar'),     -- #13
+    (N'miguel.flores@offal.com.ar')       -- #18 (Miguel, no Gonzalo Flores #54)
 ;
 
 -- ---------------------------------------------------------------------------
@@ -51,12 +60,17 @@ INSERT INTO @carga (Email) VALUES
 --    firma lo que cargó él mismo. Si la misma persona está en @carga y es la
 --    única que firma, las verificaciones quedan Pendiente para siempre.
 -- ---------------------------------------------------------------------------
+--    VACÍO A PROPÓSITO: todavía no está decidido CÓMO firma el encargado si el
+--    celular es el de Sistemas (ver "El circuito del conforme" en el README).
+--    Cuando se decida, agregar acá los mails de los encargados de Insumos y
+--    Empaque con su rol y volver a correr el script.
 DECLARE @firma TABLE (Email NVARCHAR(255), Rol VARCHAR(50), PRIMARY KEY (Email, Rol));
-INSERT INTO @firma (Email, Rol) VALUES
-    -- , (N'encargado.insumos@offal.com.ar', 'ENCARGADO INSUMOS')
-    -- , (N'encargado.empaque@offal.com.ar', 'ENCARGADO EMPAQUE')
-    (N'gustavo.cardozo@offal.com.ar', 'ADMIN')
-;
+INSERT INTO @firma (Email, Rol)
+SELECT Email, Rol FROM (VALUES
+    -- (N'encargado.insumos@offal.com.ar', 'ENCARGADO INSUMOS'),
+    -- (N'encargado.empaque@offal.com.ar', 'ENCARGADO EMPAQUE'),
+    (N'', '')
+) v (Email, Rol) WHERE Email <> N'';
 
 -- ---------------------------------------------------------------------------
 -- 4) Aplicar. Un usuario queda con un solo rol por app, así que si ya tenía
