@@ -57,14 +57,26 @@ INSERT INTO @carga (Email) VALUES
 --      El módulo busca por Email, así que alcanza con mail, nombre y Activo:
 --      EntraObjectId y PasswordHash van NULL, igual que las altas recientes.
 -- ---------------------------------------------------------------------------
---      2026-10-27: se suma Jonatan Alvarez, encargado de Insumos del turno
---      noche. Entró por el QR y le salió "no figura en el padrón": tiene cuenta
---      de Entra (Easy Auth lo autenticó) pero no estaba en acceso.Usuarios.
+--      2026-10-27: se suman tres encargados más (Alvarez por Insumos noche,
+--      Soto y Santillan por Empaque). Alvarez entró por el QR y le salió "no
+--      figura en el padrón": tenía cuenta de Entra (Easy Auth lo autenticó)
+--      pero no estaba en acceso.Usuarios.
+--
+--      ⚠️ OJO con los mails: este MERGE CREA el usuario con la dirección que
+--      diga acá, así que un error de tipeo no da error, deja una cuenta
+--      fantasma en el padrón y la persona real sigue sin poder entrar. Los tres
+--      de abajo siguen la convención nombre.apellido@offal.com.ar; si alguno
+--      figura en Entra con otra dirección, corregirlo ACÁ antes de correr:
+--          SELECT UsuarioId, Email, Nombre, Activo FROM acceso.Usuarios
+--           WHERE Nombre LIKE N'%Soto%' OR Nombre LIKE N'%antillan%';
+--      (Carlos Santillan NO es Tobias Santillan, que está en Sistemas.)
 MERGE acceso.Usuarios AS d
 USING (VALUES
-    (N'martin.maciel@offal.com.ar',   N'Martin Maciel'),
-    (N'sergio.vega@offal.com.ar',     N'Sergio Vega'),
-    (N'jonatan.alvarez@offal.com.ar', N'Jonatan Alvarez')
+    (N'martin.maciel@offal.com.ar',    N'Martin Maciel'),
+    (N'sergio.vega@offal.com.ar',      N'Sergio Vega'),
+    (N'jonatan.alvarez@offal.com.ar',  N'Jonatan Alvarez'),
+    (N'cesar.soto@offal.com.ar',       N'Cesar Soto'),
+    (N'carlos.santillan@offal.com.ar', N'Carlos Santillan')
 ) AS o (Email, Nombre) ON d.Email = o.Email
 WHEN NOT MATCHED THEN
     INSERT (Email, Nombre, Activo, FechaAlta)
@@ -86,15 +98,18 @@ WHEN MATCHED AND d.Activo = 0 THEN
 --    El rol define QUÉ SECTOR firma cada uno (ver ROLES_FIRMA en
 --    config/roles.js). Si el par queda cambiado, los dos reciben "no podés
 --    firmar verificaciones de ese sector" y el circuito se traba en la firma.
---    El módulo NO mira el turno, sólo el sector: dos personas con el mismo rol
---    conviven sin problema y cualquiera de las dos puede firmar ese sector.
---    Por eso Insumos tiene dos (Vega de día, Alvarez de noche) y suman, no se
---    pisan. Si Empaque también necesita firmante nocturno, se agrega acá.
+--    El módulo NO mira el turno, sólo el sector: varias personas con el mismo
+--    rol conviven sin problema y cualquiera de ellas firma ese sector. Los
+--    turnos de abajo son al sólo efecto de saber a quién llamar; el sistema no
+--    los controla, así que un encargado de noche puede firmar una verificación
+--    del turno mañana y viceversa.
 DECLARE @firma TABLE (Email NVARCHAR(255), Rol VARCHAR(50), PRIMARY KEY (Email, Rol));
 INSERT INTO @firma (Email, Rol) VALUES
-    (N'sergio.vega@offal.com.ar',     'ENCARGADO INSUMOS'),
-    (N'jonatan.alvarez@offal.com.ar', 'ENCARGADO INSUMOS'),
-    (N'martin.maciel@offal.com.ar',   'ENCARGADO EMPAQUE')
+    (N'sergio.vega@offal.com.ar',      'ENCARGADO INSUMOS'),   -- Insumos
+    (N'jonatan.alvarez@offal.com.ar',  'ENCARGADO INSUMOS'),   -- Insumos, turno noche
+    (N'martin.maciel@offal.com.ar',    'ENCARGADO EMPAQUE'),   -- Empaque
+    (N'cesar.soto@offal.com.ar',       'ENCARGADO EMPAQUE'),   -- Empaque
+    (N'carlos.santillan@offal.com.ar', 'ENCARGADO EMPAQUE')    -- Empaque, turno noche
 ;
 
 -- ---------------------------------------------------------------------------
