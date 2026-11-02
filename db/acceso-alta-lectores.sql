@@ -87,9 +87,10 @@ WHEN MATCHED AND d.Activo = 0 THEN
 -- ---------------------------------------------------------------------------
 -- 3) Quiénes FIRMAN el conforme.
 --    Roles posibles (ver config/roles.js):
---      ENCARGADO            → firma los dos sectores
+--      ENCARGADO            → firma todos los recorridos
 --      ENCARGADO INSUMOS    → firma sólo Insumos
 --      ENCARGADO EMPAQUE    → firma sólo Empaque
+--      ENCARGADO DESPOSTADA → firma sólo Despostada
 --      ADMIN                → carga y firma todo
 --    OJO: con PERMITIR_AUTOFIRMA=false (lo que está hoy en producción) nadie
 --    firma lo que cargó él mismo. Si la misma persona está en @carga y es la
@@ -110,6 +111,11 @@ INSERT INTO @firma (Email, Rol) VALUES
     (N'martin.maciel@offal.com.ar',    'ENCARGADO EMPAQUE'),   -- Empaque
     (N'cesar.soto@offal.com.ar',       'ENCARGADO EMPAQUE'),   -- Empaque
     (N'carlos.santillan@offal.com.ar', 'ENCARGADO EMPAQUE')    -- Empaque, turno noche
+    -- ⚠️ FALTA DESPOSTADA. Desde el 2026-11-02 "Rechazo despostada" es su propio
+    -- recorrido y necesita encargados propios. Hasta que se carguen, ninguna
+    -- verificación de Despostada se va a poder firmar y van a quedar Pendiente.
+    -- Cuando estén los mails, sumarlos ACÁ y también arriba, en el MERGE:
+    --  ,(N'nombre.apellido@offal.com.ar', 'ENCARGADO DESPOSTADA')
 ;
 
 -- ---------------------------------------------------------------------------
@@ -157,10 +163,11 @@ SELECT N'mail que no está en el padrón (o inactivo)' AS aviso, t.Email
 
 SELECT u.Nombre, u.Email, p.Rol,
        CASE WHEN p.Rol IN ('ADMIN', 'SISTEMAS') THEN 'sí' ELSE 'no' END AS puede_cargar,
-       CASE p.Rol WHEN 'ADMIN' THEN 'los dos sectores'
-                  WHEN 'ENCARGADO' THEN 'los dos sectores'
+       CASE p.Rol WHEN 'ADMIN' THEN 'todos los recorridos'
+                  WHEN 'ENCARGADO' THEN 'todos los recorridos'
                   WHEN 'ENCARGADO INSUMOS' THEN 'sólo Insumos'
                   WHEN 'ENCARGADO EMPAQUE' THEN 'sólo Empaque'
+                  WHEN 'ENCARGADO DESPOSTADA' THEN 'sólo Despostada'
                   ELSE 'no firma' END AS puede_firmar
   FROM acceso.Permisos p
   JOIN acceso.Usuarios u ON u.UsuarioId = p.UsuarioId

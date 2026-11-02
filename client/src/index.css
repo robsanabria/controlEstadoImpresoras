@@ -8,7 +8,7 @@
 .conteo { margin: 0 0 var(--sp-3); }
 .lista-errores { flex-direction: column; }
 
-/* ---- Barra de avance: cuántas van y el atajo "anduvo todo bien" ---------- */
+/* ---- Barra de avance: cuántas van y cuántas tienen problema ------------- */
 .avance {
   display: flex; align-items: center; gap: var(--sp-4); flex-wrap: wrap;
   padding: var(--sp-3) var(--sp-4);
@@ -17,12 +17,48 @@
 .avance-txt { display: flex; align-items: center; gap: var(--sp-3); font-size: var(--fs-m); }
 .avance-acciones { margin-left: auto; display: flex; gap: var(--sp-2); flex-wrap: wrap; }
 
+/* ---- Acordeón de estaciones --------------------------------------------
+   Las 6 estaciones entran en una pantalla: se abre la que se está revisando y
+   el resto queda en una línea con su estado. Antes estaban todas desplegadas y
+   completarlo era un scroll eterno. */
+.acordeon {
+  border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--panel); overflow: hidden;
+}
+.acordeon-item + .acordeon-item { border-top: 1px solid var(--line); }
+.acordeon-item.abierta { background: var(--panel-2); }
+.acordeon-cab {
+  width: 100%; min-height: var(--tap-l); padding: var(--sp-3) var(--sp-4);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-3);
+  font: inherit; font-size: var(--fs-l); font-weight: 700; color: var(--text);
+  background: transparent; border: 0; cursor: pointer; text-align: left;
+}
+.acordeon-cab:hover { background: rgba(178, 119, 70, 0.08); }
+.acordeon-nombre { display: flex; align-items: center; gap: var(--sp-3); flex-wrap: wrap; min-width: 0; }
+.acordeon-estado { display: flex; align-items: center; gap: var(--sp-2); flex-shrink: 0; }
+.acordeon-conteo {
+  font-size: var(--fs-s); font-weight: 700; color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+.acordeon-conteo.completa { color: var(--success-txt); }
+.acordeon-flecha { color: var(--muted); font-size: var(--fs-s); }
+.acordeon-cuerpo { padding: 0 var(--sp-4) var(--sp-4); }
+.acordeon-pie { display: flex; justify-content: flex-end; margin-top: var(--sp-4); }
+
+/* ---- Unidad sorteada de la estación (tronera, armadora, balanza…) ------- */
+.unidad {
+  padding: var(--sp-3) var(--sp-4); margin-bottom: var(--sp-2);
+  border: 1px solid var(--line-2); border-radius: var(--radius-s); background: var(--bg-2);
+}
+.unidad-sorteo { margin: 0 0 var(--sp-3); font-size: var(--fs-l); }
+
 /* ---- Una pregunta del checklist ----------------------------------------- */
 .chequeo {
   display: flex; flex-direction: column; gap: var(--sp-3);
   padding: var(--sp-4) 0; border-top: 1px solid var(--line);
 }
 .panel .chequeo:first-of-type { border-top: 0; padding-top: var(--sp-2); }
+.acordeon-cuerpo .chequeo:first-of-type { border-top: 0; }
 .chequeo.es-falla { border-left: 3px solid var(--danger); padding-left: var(--sp-3); margin-left: -3px; }
 .chequeo-texto { min-width: 0; }
 .chequeo-pregunta { margin: 0; font-size: var(--fs-l); font-weight: 600; }

@@ -31,6 +31,22 @@ Sin base: `MODO_DEMO=true` + `ALLOW_DEV_LOGIN=true` (ver README).
 
 ## Lo propio de este sistema
 
+- **Una verificación es UN recorrido, no la planta entera.** Cada estación
+  pertenece a un sector (`SECCIONES[].sector`): Armado de cajas → Insumos;
+  Troneras, Empaque, Rechazo y Balanza → Empaque; Rechazo despostada →
+  Despostada. Quien carga elige el recorrido y responde sólo esas estaciones;
+  ese mismo sector define qué encargado firma. Los sectores se derivan de las
+  estaciones: una estación con un sector nuevo crea el recorrido, pero hay que
+  darle su rol en `config/roles.js` y cargar encargados en el padrón, o nadie
+  va a poder firmarlo.
+- **Las estaciones con más de una unidad llevan sorteo.** Armado 4, Troneras 10,
+  Empaque 3, Balanza 3 (`SECCIONES[].unidad`). El formulario sortea cuál se
+  verifica y guarda las dos cosas: la sorteada y la verificada. Cambiarla exige
+  motivo escrito, y el servidor lo valida. Sin eso el sorteo no sirve de nada.
+- **El servidor limpia lo que no es del recorrido**: unidades de otros sectores
+  y respuestas de otras estaciones no se guardan.
+- **No hay atajo para responder todo de una.** Se sacó el botón "Anduvo todo
+  bien" (2026-11-02): cada chequeo es una prueba que alguien hace en la línea.
 - **`config/formConfig.js` es la fuente de verdad del cuestionario.** Secciones,
   chequeos, texto de cada pregunta, número en el Form original y respuesta
   esperada. El cliente no tiene ni una pregunta escrita a mano, y el servidor

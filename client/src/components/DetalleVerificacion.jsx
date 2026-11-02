@@ -128,10 +128,16 @@ export default function DetalleVerificacion({
           <h3 className="panel-titulo">Conforme del encargado de {verificacion.sector}</h3>
           {puedeFirmar ? (
             <>
-              <p className="panel-sub">
-                Firmás con el usuario de tu sesión: queda registrado tu nombre, tu dirección de correo y
-                la fecha y hora.
-              </p>
+              {/* El circuito no cambió: esto sube el tono del mensaje para que
+                  quede claro qué se está declarando y que la firma es personal. */}
+              <div className="alerta alerta-aviso">
+                <div>
+                  <strong>El conforme lo da el encargado del sector, en persona.</strong> Al firmar
+                  declarás que la prueba de los lectores se hizo y que las respuestas de arriba son
+                  las que viste. Queda registrado tu nombre, tu correo y la fecha y hora, y después
+                  no se puede cambiar. No firmes por otro ni le prestes tu sesión a nadie.
+                </div>
+              </div>
               <div className="campo-grupo">
                 <label className="campo-etq" htmlFor="comentario-conforme">
                   Comentario <span className="panel-sub">(obligatorio si observás la verificación)</span>

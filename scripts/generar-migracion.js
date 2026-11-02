@@ -5,8 +5,14 @@
  * La app NO crea nada al arrancar (regla del estándar Offal): el DDL se guarda
  * como archivo en db/migrations y lo corre Sistemas contra la base.
  *
- *   npm run migracion                                   # lo imprime
- *   npm run migracion > db/migrations/002-descripcion.sql
+ *   npm run migracion                 # esquema completo (base nueva)
+ *   npm run migracion -- --columnas   # sólo las columnas que falten (base ya creada)
+ *
+ *   npm run migracion -- --columnas > db/migrations/00N-descripcion.sql
+ *
+ * Las migraciones ya corridas NO se regeneran: se escribe la siguiente. Para
+ * una base que ya existe alcanza con --columnas, que emite un ALTER ADD por
+ * cada campo nuevo de la cabecera.
  *
  * Ojo: sólo la CABECERA tiene una columna por campo (sale de CAMPOS_VISITA). Las
  * respuestas van en filas del detalle (pregunta + respuesta + problemática), así
@@ -22,6 +28,29 @@ function ddlTipo(sqlType) {
 }
 
 const { esquema, tabla, tablaNombre, tablaDetalle, tablaDetalleNombre } = FORM_META;
+
+// Las columnas van siempre NULL: la tabla ya tiene filas que no pueden tener
+// ese dato. Lo obligatorio se valida en la API, no en el esquema.
+const altersColumnas = CAMPOS_VISITA
+  .map((c) => `IF COL_LENGTH('${tabla}', '${c.name}') IS NULL
+    ALTER TABLE ${tabla} ADD [${c.name}] ${ddlTipo(c.sqlType)} NULL;`)
+  .join(`
+GO
+`);
+
+if (process.argv.includes('--columnas')) {
+  process.stdout.write(`-- ============================================================================
+-- ${FORM_META.titulo} — columnas de la cabecera
+-- Generado por: npm run migracion -- --columnas
+-- Idempotente: agrega sólo lo que falte, se puede correr de nuevo.
+-- Base: controletiquetas (compartida). Esquema: ${esquema}.
+-- ============================================================================
+
+${altersColumnas}
+GO
+`);
+  process.exit(0);
+}
 
 const colsVisita = CAMPOS_VISITA
   .map((c) => `    [${c.name}] ${ddlTipo(c.sqlType)} ${c.required ? 'NOT NULL' : 'NULL'},`)
@@ -94,5 +123,14 @@ GO
 -- Bandeja de pendientes de conforme: es la consulta más frecuente.
 IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_${tablaNombre}_Estado')
     CREATE INDEX IX_${tablaNombre}_Estado ON ${tabla} ([Estado]) INCLUDE ([fecha], [sector]);
+GO
+
+-- ---------------------------------------------------------------------------
+-- Columnas de la cabecera que todavía no existan. Esto es lo que hace que la
+-- migración sirva también sobre la tabla YA creada en producción: agregar un
+-- campo a CAMPOS_VISITA y regenerar alcanza.
+-- Van siempre NULL: la tabla tiene filas viejas que no pueden tener ese dato.
+-- ---------------------------------------------------------------------------
+${altersColumnas}
 GO
 `);

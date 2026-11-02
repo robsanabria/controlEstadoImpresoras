@@ -3,7 +3,8 @@ const store = require('../services/store');
 const roles = require('../config/roles');
 const { ErrorHttp, asyncHandler } = require('../middlewares/errores');
 const {
-  CAMPOS_VISITA, CHECKS, CHECK_POR_ID, RESPUESTAS, ESTADOS, esFalla, pideTexto,
+  CAMPOS_VISITA, CHECK_POR_ID, RESPUESTAS, NO_APLICA, SECCIONES, ESTADOS,
+  seccionesDeSector, checksDeSector, esFalla, pideTexto,
 } = require('../config/formConfig');
 
 const router = express.Router();
@@ -30,9 +31,26 @@ function validarCabecera(body) {
       errores.push(`"${c.label}": valor no válido.`);
       continue;
     }
-    if (c.sqlType === 'texto') v = String(v).slice(0, 1000);
+    if (c.sqlType === 'int') {
+      const n = Number(v);
+      if (!Number.isInteger(n)) { errores.push(`"${c.label}" tiene que ser un número entero.`); continue; }
+      v = n;
+    } else if (c.sqlType === 'texto') v = String(v).slice(0, 1000);
     else if (c.sqlType === 'nvarchar') v = String(v).slice(0, 255);
     datos[c.name] = v;
+  }
+
+  // Campos que recién se vuelven obligatorios cuando otros dos difieren: hoy es
+  // el motivo del cambio de tronera. Si verificaron una tronera distinta de la
+  // sorteada, tienen que decir por qué; si no, el sorteo no sirve de nada.
+  for (const c of CAMPOS_VISITA) {
+    if (!c.exigidoSiDistinto) continue;
+    const [uno, otro] = c.exigidoSiDistinto;
+    const cambio =
+      datos[uno] !== null && datos[otro] !== null && String(datos[uno]) !== String(datos[otro]);
+    if (cambio && !datos[c.name]) errores.push(`Falta "${c.label}".`);
+    // Si no hubo cambio, el motivo no corresponde y no se guarda.
+    if (!cambio) datos[c.name] = null;
   }
 
   return { datos, errores };
@@ -44,13 +62,18 @@ function validarCabecera(body) {
  * El cliente manda { id: { respuesta, problematica } }. El texto y el número de
  * la pregunta NO se toman del cliente: salen de formConfig.js, así que lo que
  * queda guardado es la pregunta que el sistema realmente hizo.
+ *
+ * Se piden exactamente los chequeos DEL RECORRIDO elegido: ni de menos (faltan
+ * respuestas) ni de más (preguntas de otro sector, que no se recorrió).
  */
-function validarRespuestas(body) {
+function validarRespuestas(body, sector) {
   const errores = [];
   const filas = [];
   const recibidas = body?.respuestas || {};
+  const delSector = checksDeSector(sector);
+  const idsDelSector = new Set(delSector.map((c) => c.id));
 
-  for (const check of CHECKS) {
+  for (const check of delSector) {
     const cruda = recibidas[check.id] || {};
     const respuesta = String(cruda.respuesta ?? '').trim();
     const problematica = String(cruda.problematica ?? '').trim().slice(0, 1000);
@@ -85,12 +108,61 @@ function validarRespuestas(body) {
     });
   }
 
-  // Avisa si mandaron una clave que no existe: suele ser el cliente desactualizado.
+  // Claves que no corresponden: cliente desactualizado, o respuestas de un
+  // recorrido que no es el elegido.
   Object.keys(recibidas).forEach((id) => {
-    if (!CHECK_POR_ID[id]) errores.push(`La pregunta "${id}" no existe en el formulario.`);
+    if (!CHECK_POR_ID[id]) {
+      errores.push(`La pregunta "${id}" no existe en el formulario.`);
+    } else if (!idsDelSector.has(id) && recibidas[id]?.respuesta) {
+      errores.push(`La pregunta ${CHECK_POR_ID[id].nro} no es del recorrido de ${sector}.`);
+    }
   });
 
   return { filas, errores };
+}
+
+/**
+ * Unidad verificada por estación (tronera, armadora, línea de empaque, balanza).
+ *
+ * Si la estación se revisó —o sea, si alguna de sus preguntas tiene una
+ * respuesta distinta de "No aplica"— hay que decir en qué unidad se hizo la
+ * prueba: sin eso, el sorteo no sirve para nada. Si no se revisó, se limpia la
+ * unidad y el motivo, pero se conserva cuál había salido sorteada.
+ *
+ * Muta `visita` a propósito: es el objeto que se va a guardar.
+ */
+function validarUnidades(visita, filas) {
+  if (!visita.sector) return []; // ya lo reporta la validación de la cabecera
+
+  const errores = [];
+
+  // Las estaciones de OTROS recorridos no se guardan: el formulario sortea
+  // todas al abrirse, y sin esto una verificación de Insumos terminaba con una
+  // tronera y una balanza cargadas que nadie miró.
+  const delRecorrido = new Set(seccionesDeSector(visita.sector).map((s) => s.id));
+  for (const s of SECCIONES) {
+    if (!s.unidad || delRecorrido.has(s.id)) continue;
+    visita[s.unidad.campo] = null;
+    visita[`${s.unidad.campo}_sorteada`] = null;
+    visita[`${s.unidad.campo}_motivo`] = null;
+  }
+
+  for (const s of seccionesDeSector(visita.sector)) {
+    if (!s.unidad) continue;
+    const { campo, nombre } = s.unidad;
+    const revisada = filas.some((f) => f.Seccion === s.id && f.Respuesta !== NO_APLICA);
+
+    if (revisada) {
+      if (!visita[campo]) {
+        errores.push(`${s.nombre}: falta indicar en qué ${nombre.toLowerCase()} se hizo la prueba.`);
+      }
+    } else {
+      visita[campo] = null;
+      visita[`${campo}_motivo`] = null;
+    }
+  }
+
+  return errores;
 }
 
 function idDeParam(param) {
@@ -112,8 +184,8 @@ router.post(
     }
 
     const { datos: visita, errores: errCab } = validarCabecera(req.body?.visita);
-    const { filas, errores: errResp } = validarRespuestas(req.body || {});
-    const errores = [...errCab, ...errResp];
+    const { filas, errores: errResp } = validarRespuestas(req.body || {}, visita.sector);
+    const errores = [...errCab, ...errResp, ...validarUnidades(visita, filas)];
     if (errores.length) throw new ErrorHttp(400, errores.join(' '));
 
     res.status(201).json(await store.guardar({ visita, respuestas: filas }, req.user));

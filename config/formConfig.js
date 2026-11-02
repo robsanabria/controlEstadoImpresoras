@@ -22,13 +22,30 @@
  */
 
 // Secciones del Form, en orden. Cada una es una estación de la línea.
+// Secciones del Form, en orden. Cada una es una estación de la línea.
+//
+// Las estaciones que tienen MÁS DE UNA unidad en planta llevan `unidad`: el
+// sistema sortea cuál se verifica, para que no se termine controlando siempre
+// la misma (la más cómoda o la más cercana). Se puede cambiar por otra, pero
+// hay que escribir por qué, y el sorteo queda guardado igual.
+//
+// Para cambiar la cantidad de unidades de una estación, o sumar una nueva, se
+// edita acá y listo: de esto salen las columnas SQL, los desplegables y la
+// validación. Si cambia la cantidad, hay que regenerar la migración.
+// Cada estación pertenece a UN sector, y el sector es el recorrido: quien carga
+// elige qué recorrido va a hacer y responde sólo las estaciones de ese sector.
+// El mismo sector define después qué encargado firma el conforme.
 const SECCIONES = [
-  { id: 'armado_cajas', nombre: 'Armado de cajas' },
-  { id: 'troneras', nombre: 'Troneras' },
-  { id: 'empaque', nombre: 'Empaque' },
-  { id: 'rechazo', nombre: 'Rechazo' },
-  { id: 'balanza', nombre: 'Balanza' },
-  { id: 'rechazo_despostada', nombre: 'Rechazo despostada' },
+  { id: 'armado_cajas', nombre: 'Armado de cajas', sector: 'Insumos',
+    unidad: { campo: 'armadora', nombre: 'Armadora', cantidad: 4 } },
+  { id: 'troneras', nombre: 'Troneras', sector: 'Empaque',
+    unidad: { campo: 'tronera', nombre: 'Tronera', cantidad: 10 } },
+  { id: 'empaque', nombre: 'Empaque', sector: 'Empaque',
+    unidad: { campo: 'linea_empaque', nombre: 'Línea de empaque', cantidad: 3 } },
+  { id: 'rechazo', nombre: 'Rechazo', sector: 'Empaque' },
+  { id: 'balanza', nombre: 'Balanza', sector: 'Empaque',
+    unidad: { campo: 'balanza', nombre: 'Balanza', cantidad: 3 } },
+  { id: 'rechazo_despostada', nombre: 'Rechazo despostada', sector: 'Despostada' },
 ];
 
 // Ayuda que el Form muestra en las preguntas de validación.
@@ -97,13 +114,32 @@ const RESPUESTAS = ['Si', 'No', NO_APLICA];
 // No está en el Form original: es lo mínimo para saber quién verificó, cuándo y
 // a qué encargado le toca firmar el conforme.
 // ---------------------------------------------------------------------------
-const SECTORES = ['Insumos', 'Empaque'];
+// Los recorridos. Salen de las estaciones: un sector existe porque tiene
+// estaciones, así que agregar una estación con un sector nuevo lo crea solo.
+// OJO: un sector nuevo necesita su rol de firma en config/roles.js y los
+// encargados cargados en el padrón, o nadie va a poder firmar ese recorrido.
+const SECTORES = [...new Set(SECCIONES.map((s) => s.sector))];
 const TURNOS = ['Mañana', 'Tarde', 'Noche'];
 
+/**
+ * Campos de la cabecera (una columna cada uno en sistemas.VerificacionLectores).
+ *
+ * Los que llevan `seccion` NO se muestran arriba con los datos generales: se
+ * renderizan dentro de esa sección del cuestionario, porque son contexto de esa
+ * estación. Igual son columnas de la cabecera, así se reportan y se exportan sin
+ * tener que abrir el detalle.
+ *
+ * `type: 'oculto'` → no se dibuja; lo completa el formulario (el sorteo).
+ * `exigidoSiDistinto` → el campo pasa a obligatorio cuando los dos campos que
+ * nombra tienen valores distintos. Lo valida el servidor, no sólo el cliente.
+ */
 const CAMPOS_VISITA = [
   { name: 'fecha', label: 'Fecha de la verificación', type: 'date', required: true, sqlType: 'date' },
-  { name: 'sector', label: 'Sector que da el conforme', type: 'select', required: true, options: SECTORES,
-    sqlType: 'nvarchar', help: 'Insumos o Empaque: define de qué sector es el encargado que firma.' },
+  // El recorrido ES el sector: define qué estaciones se responden y qué
+  // encargado firma el conforme.
+  { name: 'sector', label: 'Recorrido que vas a hacer', type: 'select', required: true,
+    options: SECTORES, sqlType: 'nvarchar',
+    help: 'Define qué estaciones entran y qué encargado firma el conforme.' },
   // Obligatorio: el conforme lo da el encargado DEL TURNO, así que sin turno no
   // se sabe a quién le toca firmar.
   { name: 'turno', label: 'Turno', type: 'select', required: true, options: TURNOS, sqlType: 'nvarchar',
@@ -112,12 +148,43 @@ const CAMPOS_VISITA = [
     sqlType: 'texto', help: 'Opcional. Algo que valga para toda la verificación.' },
 ];
 
+/**
+ * Los tres campos que genera cada estación con más de una unidad:
+ *   <campo>_sorteada → la que salió sorteada (la completa el formulario)
+ *   <campo>          → la que realmente se verificó
+ *   <campo>_motivo   → por qué se cambió, obligatorio sólo si difieren
+ *
+ * No son obligatorios en SQL: una estación marcada entera como "No aplica" no
+ * tiene unidad que registrar. Que la unidad sea obligatoria cuando SÍ se revisó
+ * lo controla el servidor (routes/verificaciones.js).
+ */
+function camposDeUnidad(seccion) {
+  const u = seccion.unidad;
+  if (!u) return [];
+  const opciones = Array.from({ length: u.cantidad }, (_, i) => String(i + 1));
+  const art = /^[aeiou]/i.test(u.nombre) ? '' : '';
+  return [
+    { name: `${u.campo}_sorteada`, label: `${u.nombre} sorteada`, type: 'oculto',
+      sqlType: 'int', seccion: seccion.id },
+    { name: u.campo, label: `${u.nombre} verificada`, type: 'select', options: opciones,
+      sqlType: 'int', seccion: seccion.id,
+      help: `Viene la sorteada. Si se verificó otra${art}, elegila y explicá por qué.` },
+    { name: `${u.campo}_motivo`, label: `Por qué se cambió de ${u.nombre.toLowerCase()}`,
+      type: 'textarea', sqlType: 'texto', seccion: seccion.id,
+      exigidoSiDistinto: [u.campo, `${u.campo}_sorteada`] },
+  ];
+}
+
+// Columnas de la cabecera: las generales + las de unidad de cada estación.
+CAMPOS_VISITA.push(...SECCIONES.flatMap(camposDeUnidad));
+
 // Metadatos del módulo.
 const FORM_META = {
   titulo: 'Verificación de Lectores',
   descripcion:
-    'Sistemas hace la prueba de los lectores de la línea y responde los 10 chequeos. ' +
-    'Al guardar queda pendiente de conforme hasta que el encargado del sector lo firme con su usuario.',
+    'Elegí el recorrido que vas a hacer y respondé las estaciones de ese sector, una por una. ' +
+    'La verificación NO vale hasta que la firma el encargado del sector con su propio usuario: ' +
+    'hasta entonces queda pendiente de conforme.',
   esquema: 'sistemas',
   tabla: 'sistemas.VerificacionLectores',
   tablaNombre: 'VerificacionLectores',
@@ -148,8 +215,27 @@ function pideTexto(check, respuesta) {
   return !!respuesta && respuesta !== check.esperado;
 }
 
+/** Las estaciones de un recorrido, en orden. */
+function seccionesDeSector(sector) {
+  return SECCIONES.filter((s) => s.sector === sector);
+}
+
+/** Los chequeos de un recorrido (los de sus estaciones). */
+function checksDeSector(sector) {
+  const ids = new Set(seccionesDeSector(sector).map((s) => s.id));
+  return CHECKS.filter((c) => ids.has(c.seccion));
+}
+
+/** Campos de la cabecera que van dentro de una sección del cuestionario. */
+function camposDeSeccion(seccionId) {
+  return CAMPOS_VISITA.filter((c) => c.seccion === seccionId);
+}
+
 module.exports = {
   SECCIONES,
+  seccionesDeSector,
+  checksDeSector,
+  camposDeSeccion,
   CHECKS,
   CHECK_POR_ID,
   RESPUESTAS,

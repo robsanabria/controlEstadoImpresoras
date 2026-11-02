@@ -7,8 +7,9 @@
  *   - FIRMAR  → el encargado del sector da el conforme.
  *
  * El conforme está acotado por sector: el encargado de Insumos no firma
- * controles de Empaque. Para agregar un sector nuevo se suma acá y en
- * SECTORES de formConfig.js.
+ * verificaciones de Empaque. Los sectores salen de las estaciones (SECCIONES
+ * en formConfig.js); un sector nuevo necesita su rol acá Y sus encargados
+ * cargados en el padrón, o ese recorrido no lo puede firmar nadie.
  */
 
 // Clave de la app en el padrón central (acceso.Permisos.App).
@@ -23,6 +24,7 @@ const ROLES_FIRMA = {
   admin: '*',
   encargado: '*',
   encargado_insumos: ['Insumos'],
+  encargado_despostada: ['Despostada'],
   encargado_empaque: ['Empaque'],
 };
 
