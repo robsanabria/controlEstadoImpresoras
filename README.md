@@ -132,6 +132,24 @@ PERMITIR_AUTOFIRMA=true   # para recorrer el circuito completo con un solo usuar
 Arranca sin base, con dos verificaciones de ejemplo, y **guarda en memoria**: lo
 que se cargue se pierde al reiniciar. Estas variables no se cargan nunca en Azure.
 
+## Resumen diario
+
+A día vencido sale un correo a Nicolás Gutiérrez y Andrea Cardozo **sólo si el
+día anterior tuvo menos de 3 verificaciones**. Si llegó a 3 o más, no llega
+nada.
+
+```bash
+npm run resumen                  # ayer
+npm run resumen -- 2026-11-01    # un día puntual
+npm run resumen -- --forzar      # manda aunque el día esté OK (para probar)
+```
+
+Lo dispara [`.github/workflows/resumen-diario.yml`](.github/workflows/resumen-diario.yml)
+todos los días a las 7 de Argentina. **Falta cargar los secrets** (base y
+casilla de correo): hasta entonces el job no corre y avisa. Si Infra prefiere no
+darle a Actions acceso a la base, el mismo `npm run resumen` sirve como WebJob
+del App Service.
+
 ## Base de datos
 
 Base compartida `controletiquetas`, esquema propio **`sistemas`**:

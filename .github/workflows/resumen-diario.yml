@@ -1,0 +1,78 @@
+# Resumen diario a día vencido. Avisa por correo SÓLO si el día anterior tuvo
+# menos de 3 verificaciones; si llegó al mínimo no manda nada.
+#
+# ⚠️ Antes de que sirva hay que cargar los secrets en
+# GitHub → Settings → Secrets → Actions:
+#   DB_SERVER, DB_NAME, DB_USER, DB_PASS   (la base controletiquetas)
+#   SMTP_HOST, SMTP_USER, SMTP_PASS, MAIL_REMITENTE  (la casilla que envía)
+# Mientras falte alguno, el job NO corre y queda en verde con un aviso, para no
+# llenar de rojo el historial todos los días.
+#
+# Si Infra prefiere no darle a Actions acceso a la base, la alternativa es un
+# WebJob en el App Service corriendo `npm run resumen` con las mismas variables
+# que ya tiene la app. El script es el mismo.
+
+name: Resumen diario - verificacion-lectores-offal
+
+on:
+  schedule:
+    # 10:00 UTC = 07:00 en Argentina. Mira el día anterior completo.
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+    inputs:
+      fecha:
+        description: 'Día a resumir (YYYY-MM-DD). Vacío = ayer.'
+        required: false
+      forzar:
+        description: 'Mandar el correo aunque el día esté OK'
+        type: boolean
+        default: false
+
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  resumen:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      DB_SERVER: ${{ secrets.DB_SERVER }}
+      DB_NAME: ${{ secrets.DB_NAME }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASS: ${{ secrets.DB_PASS }}
+      SMTP_HOST: ${{ secrets.SMTP_HOST }}
+      SMTP_PORT: '587'
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+      MAIL_REMITENTE: ${{ secrets.MAIL_REMITENTE }}
+      RESUMEN_MINIMO: '3'
+      RESUMEN_DESTINATARIOS: 'nicolas.gutierrez@offal.com.ar,andrea.cardozo@offal.com.ar'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ver si están los secrets
+        id: listo
+        run: |
+          if [ -n "$DB_SERVER" ] && [ -n "$SMTP_HOST" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Resumen omitido — faltan secrets (base y/o casilla de correo)."
+          fi
+
+      - uses: actions/setup-node@v4
+        if: steps.listo.outputs.ok == 'true'
+        with:
+          node-version: '24.x'
+          cache: npm
+
+      - name: Instalar
+        if: steps.listo.outputs.ok == 'true'
+        run: npm ci --omit=dev
+
+      - name: Resumen del día anterior
+        if: steps.listo.outputs.ok == 'true'
+        run: npm run resumen -- ${{ inputs.fecha }} ${{ inputs.forzar && '--forzar' || '' }}

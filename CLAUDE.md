@@ -79,6 +79,19 @@ Sin base: `MODO_DEMO=true` + `ALLOW_DEV_LOGIN=true` (ver README).
 - El UPDATE del conforme es condicional sobre `Estado = 'Pendiente'`: no se pisa
   una firma ya dada.
 
+## Resumen diario por correo
+
+- `npm run resumen` mira el día anterior y manda correo **sólo si hubo menos de
+  `RESUMEN_MINIMO` (3) verificaciones**. Si el día llegó al mínimo, no manda
+  nada: es un aviso por excepción, decidido así por Sistemas el 2026-11-02.
+- Cuenta por el campo `fecha` (el día recorrido), no por `CreadoEn`: cargar a la
+  madrugada la recorrida de ayer cuenta para ayer.
+- Lo dispara un cron, NO la app: `.github/workflows/resumen-diario.yml` (o un
+  WebJob del App Service con las mismas variables). El script corre una vez y
+  sale; sale con 1 si no pudo enviar, para que el cron lo marque en rojo.
+- `services/mailer.js` es el único que sabe cómo viaja el correo. Sin SMTP
+  configurado no falla en silencio: loguea el mail y devuelve `enviado: false`.
+
 ## Reglas del estándar Offal (ver `_plataforma/EVALUACION-PLATAFORMA.md` punto 6)
 
 - `middlewares/auth.js`, `middlewares/errores.js`, `config/db.js` y `lib/modulos.js`

@@ -298,4 +298,31 @@ async function resolver(id, { estado, comentario }, user) {
   return obtener(id);
 }
 
-module.exports = { guardar, listar, listarPlano, obtener, resolver };
+/**
+ * Las verificaciones de un día, para el resumen diario.
+ *
+ * Cuenta por el campo `fecha` (el día al que corresponde la verificación), no
+ * por cuándo se cargó: si alguien carga a la madrugada la recorrida de ayer,
+ * cuenta para ayer, que es lo que se está midiendo.
+ */
+async function delDia(fecha) {
+  const pool = await conexion();
+
+  if (!pool) {
+    const filas = memCabeceras.filter((c) => String(c.fecha).slice(0, 10) === fecha);
+    return filas.map((c) => ({ Id: c.Id, sector: c.sector, turno: c.turno, Estado: c.Estado }));
+  }
+
+  const r = await pool
+    .request()
+    .input('fecha', sql.Date, fecha)
+    .query(
+      `SELECT Id, sector, turno, Estado
+         FROM ${TABLA}
+        WHERE fecha = @fecha
+        ORDER BY Id;`
+    );
+  return r.recordset;
+}
+
+module.exports = { guardar, listar, listarPlano, obtener, resolver, delDia };
