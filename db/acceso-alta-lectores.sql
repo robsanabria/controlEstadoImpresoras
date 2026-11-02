@@ -76,7 +76,8 @@ USING (VALUES
     (N'sergio.vega@offal.com.ar',      N'Sergio Vega'),
     (N'jonatan.alvarez@offal.com.ar',  N'Jonatan Alvarez'),
     (N'cesar.soto@offal.com.ar',       N'Cesar Soto'),
-    (N'carlos.santillan@offal.com.ar', N'Carlos Santillan')
+    (N'carlos.santillan@offal.com.ar', N'Carlos Santillan'),
+    (N'javier.fernandez@offal.com.ar', N'Javier Fernandez')
 ) AS o (Email, Nombre) ON d.Email = o.Email
 WHEN NOT MATCHED THEN
     INSERT (Email, Nombre, Activo, FechaAlta)
@@ -110,12 +111,13 @@ INSERT INTO @firma (Email, Rol) VALUES
     (N'jonatan.alvarez@offal.com.ar',  'ENCARGADO INSUMOS'),   -- Insumos, turno noche
     (N'martin.maciel@offal.com.ar',    'ENCARGADO EMPAQUE'),   -- Empaque
     (N'cesar.soto@offal.com.ar',       'ENCARGADO EMPAQUE'),   -- Empaque
-    (N'carlos.santillan@offal.com.ar', 'ENCARGADO EMPAQUE')    -- Empaque, turno noche
-    -- ⚠️ FALTA DESPOSTADA. Desde el 2026-11-02 "Rechazo despostada" es su propio
-    -- recorrido y necesita encargados propios. Hasta que se carguen, ninguna
-    -- verificación de Despostada se va a poder firmar y van a quedar Pendiente.
-    -- Cuando estén los mails, sumarlos ACÁ y también arriba, en el MERGE:
-    --  ,(N'nombre.apellido@offal.com.ar', 'ENCARGADO DESPOSTADA')
+    (N'carlos.santillan@offal.com.ar', 'ENCARGADO EMPAQUE'),   -- Empaque, turno noche
+    -- Despostada tiene encargado SÓLO de día. No hace falta uno de noche: el
+    -- módulo mira sector y no turno, así que una verificación nocturna de
+    -- Despostada queda Pendiente y la firma Javier cuando entra a la mañana.
+    -- Si algún día el conforme tiene que ser del mismo turno, esto deja de
+    -- alcanzar y hay que conseguir un firmante nocturno.
+    (N'javier.fernandez@offal.com.ar', 'ENCARGADO DESPOSTADA') -- Despostada, turno día
 ;
 
 -- ---------------------------------------------------------------------------
