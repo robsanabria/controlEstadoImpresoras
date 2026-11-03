@@ -197,6 +197,15 @@ export default function App() {
         env={usuario?.env}
         modulos={usuario?.modulos}
         claveActual="lectores"
+        // Las pantallas del módulo van en el renglón de abajo de la barra. Mientras
+        // se firma (QR) no se muestran: esa pantalla es un paso aparte.
+        secciones={firmaId ? undefined : tabs.map((t) => ({
+          clave: t.id,
+          nombre: t.txt,
+          href: `#${t.id}`,
+          activa: vista === t.id,
+          onClick: (e) => { e.preventDefault(); setVista(t.id); setSeleccionada(null); },
+        }))}
       />
       <main className="wrap" id="contenido">
         {firmaId ? (
@@ -213,19 +222,6 @@ export default function App() {
           <h1>{config?.meta?.titulo}</h1>
           {config?.meta?.descripcion && <p className="lead">{config.meta.descripcion}</p>}
         </div>
-
-        <nav className="tabs" aria-label="Pantallas del módulo">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              className={`tab ${vista === t.id ? 'on' : ''}`}
-              aria-current={vista === t.id ? 'page' : undefined}
-              onClick={() => { setVista(t.id); setSeleccionada(null); }}
-            >
-              {t.txt}
-            </button>
-          ))}
-        </nav>
 
         {vista === 'cargar' && <VerificacionForm config={config} onSubmit={onCrear} />}
 

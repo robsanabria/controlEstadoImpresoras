@@ -40,7 +40,8 @@
   /* --- medidas --- */
   --tap: 44px;        /* área táctil mínima (WCAG 2.5.5 / issue #11 punto 4) */
   --tap-l: 52px;      /* acciones principales en planta */
-  --nav-h: 64px;
+  --nav-h: 64px;      /* renglón común de la barra */
+  --nav-sub-h: 48px;  /* renglón de pantallas del módulo (debajo del anterior) */
   --maxw: 1220px;
   --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px; --sp-5: 24px; --sp-6: 32px;
 

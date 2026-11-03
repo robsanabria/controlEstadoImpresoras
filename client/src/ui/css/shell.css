@@ -1,7 +1,8 @@
 /* ============================================================================
    @offal/ui · shell.css
-   Marco de toda aplicación: barra de navegación, cinta de entorno, menú de
-   usuario con salto entre módulos, contenedor de página y pie.
+   Marco de toda aplicación: barra de navegación de dos renglones (arriba lo
+   común a todos los sistemas; abajo las pantallas del módulo), cinta de
+   entorno, lanzador de módulos, menú de usuario, contenedor de página y pie.
    El HTML de la barra es el CONTRATO: React (ui/react/Navbar.jsx), Blazor y
    Angular generan exactamente estas clases y este orden.
    ============================================================================ */
@@ -16,10 +17,12 @@
 .nav-inner {
   max-width: var(--maxw); margin: 0 auto; height: var(--nav-h);
   padding: 0 clamp(16px, 4vw, 28px);
-  display: flex; align-items: center; justify-content: space-between; gap: var(--sp-4);
+  display: flex; align-items: center; justify-content: flex-start; gap: var(--sp-4);
 }
 
-/* marca: logo en círculo blanco + wordmark + separador + nombre del módulo + cinta */
+/* marca: logo en círculo blanco + wordmark + cinta. El nombre del módulo NO va
+   en la barra (pedido de gerencia, 2026-11): la identidad es la de la empresa y
+   el módulo se reconoce por su renglón de pantallas y por el título de la página. */
 .brand {
   display: flex; align-items: center; gap: var(--sp-3);
   text-decoration: none; color: var(--text);
@@ -31,11 +34,6 @@
 }
 .brand-badge img { width: 64%; height: 64%; object-fit: contain; display: block; }
 .brand-wordmark { height: clamp(16px, 2.2vw, 24px); width: auto; display: block; flex-shrink: 0; }
-.brand-sep { color: var(--muted); font-weight: 400; }
-.brand-sub {
-  font-weight: 700; font-size: 15px; white-space: nowrap;
-  min-width: 0; overflow: hidden; text-overflow: ellipsis;
-}
 
 /* cinta de entorno: sólo se renderiza cuando env !== 'production' */
 .cinta {
@@ -45,29 +43,30 @@
 }
 .cinta-dev { background: var(--info); color: #06222b; }
 
-/* secciones DEL módulo (Registro / Reportes…): pastillas al lado de la marca en escritorio.
-   Si no entran (un módulo con siete secciones en una ventana angosta), la franja
-   se desplaza a lo ancho en vez de pisarse con el botón Inicio y el usuario. */
-.nav-secciones {
-  display: flex; align-items: center; gap: 6px; flex: 1 1 auto; min-width: 0; margin-left: 4px;
+/* --- renglón del módulo: sus pantallas (Registro / Reportes…) como pastillas ---
+   Va DENTRO de header.nav, debajo de .nav-inner, así se desplaza junto con la
+   barra (sticky). Se ve en todos los tamaños; si las pastillas no entran (un
+   módulo con siete pantallas en un celular), el renglón se desplaza de costado
+   sin scrollbar visible. Sólo se renderiza con dos o más secciones. */
+.nav-sub { border-top: 1px solid var(--line); }
+.nav-sub-inner {
+  max-width: var(--maxw); margin: 0 auto; min-height: var(--nav-sub-h);
+  padding: 0 clamp(16px, 4vw, 28px);
+  display: flex; align-items: center; gap: 6px;
   overflow-x: auto; scrollbar-width: none; -webkit-overflow-scrolling: touch;
 }
-.nav-secciones::-webkit-scrollbar { display: none; }
-.nav-secciones .nav-sec { flex-shrink: 0; }
+.nav-sub-inner::-webkit-scrollbar { display: none; }
 .nav-sec {
-  display: inline-flex; align-items: center; min-height: var(--tap); padding: 0 14px;
+  display: inline-flex; align-items: center; flex-shrink: 0; min-height: 36px; padding: 0 14px;
   border: 1px solid transparent; border-radius: var(--radius-pill);
   color: var(--muted); text-decoration: none; font-size: var(--fs-s); font-weight: 600; white-space: nowrap;
   transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 .nav-sec:hover { color: var(--text); border-color: var(--line-2); }
 .nav-sec.on { color: var(--text); border-color: var(--primary); background: rgba(178, 119, 70, 0.16); }
-/* en el menú de usuario sólo aparecen cuando la barra no las muestra */
-.user-menu-secciones { display: none; }
-.user-menu-item.on { color: var(--primary-bright); }
 
-/* derecha: botón Inicio + chip de usuario */
-.nav-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+/* derecha: botón Inicio + chip de usuario, siempre pegados al borde derecho */
+.nav-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: auto; }
 .nav-btn {
   display: inline-flex; align-items: center; gap: 7px;
   min-height: var(--tap); padding: 0 14px;
@@ -78,6 +77,46 @@
 }
 .nav-btn svg { width: 18px; height: 18px; }
 .nav-btn:hover { border-color: var(--primary); background: rgba(178, 119, 70, 0.12); }
+
+/* --- lanzador de módulos (waffle): salto a otro sistema sin volver al portal --- */
+.nav-apps { position: relative; flex-shrink: 0; }
+.nav-apps-btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--tap); height: var(--tap); min-width: var(--tap);
+  border: 1px solid var(--line); border-radius: var(--radius-s);
+  background: transparent; color: var(--muted); cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.nav-apps-btn svg { width: 19px; height: 19px; }
+.nav-apps-btn:hover,
+.nav-apps-btn[aria-expanded="true"] {
+  color: var(--primary-bright); border-color: var(--primary); background: rgba(178, 119, 70, 0.12);
+}
+.nav-apps-panel {
+  position: absolute; top: calc(100% + 10px); left: 0; z-index: 50;
+  width: 340px; max-width: calc(100vw - 32px); padding: 12px;
+  background: var(--panel); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--sombra);
+}
+.nav-apps-head {
+  padding: 2px 6px 10px; font-size: var(--fs-xs); font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted);
+}
+.nav-apps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+.app-tile {
+  display: flex; flex-direction: column; align-items: center; gap: 8px;
+  padding: 12px 6px; border-radius: 10px; text-align: center;
+  color: var(--text); text-decoration: none;
+}
+.app-tile:hover { background: rgba(178, 119, 70, 0.12); }
+.app-tile-ic {
+  width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center;
+  background: rgba(178, 119, 70, 0.14); color: var(--primary-bright);
+}
+.app-tile-ic svg { width: 19px; height: 19px; }
+.app-tile-nombre { font-size: 11.5px; line-height: 1.25; }
+.app-tile.on .app-tile-ic { background: var(--primary); color: #fff; }
+.app-tile.on .app-tile-nombre { color: var(--primary-bright); font-weight: 700; }
+@media (max-width: 420px) { .nav-apps-grid { grid-template-columns: repeat(2, 1fr); } }
 
 .user-wrap { position: relative; }
 .user {
@@ -145,25 +184,12 @@
 .pie { margin-top: auto; padding-top: 40px; color: var(--muted); font-size: 12px; text-align: center; }
 
 /* --- responsive --- */
-/* Guarda interna de la barra (no es un breakpoint de página): con secciones y una
-   ventana angosta, el wordmark cede su lugar a las pastillas; el logo y el nombre
-   del módulo alcanzan para identificar dónde se está. */
-@media (max-width: 1100px) {
-  .nav-inner:has(.nav-secciones) .brand-wordmark,
-  .nav-inner:has(.nav-secciones) .brand-sep { display: none; }
-}
-@media (max-width: 820px) {
-  /* Las secciones del módulo pasan al menú de usuario. */
-  .nav-secciones { display: none; }
-  .user-menu-secciones { display: block; }
-  /* En tablet y celular se esconde el wordmark y queda el nombre del MÓDULO.
-     Quien está en planta con varias apps abiertas necesita saber en cuál está. */
-  .brand-wordmark, .brand-sep { display: none; }
-  .brand-sub { font-size: 16px; }
-}
+/* El wordmark se ve en todos los tamaños: es la única identidad de la barra.
+   El renglón de pantallas también queda siempre (se desplaza si no entra). */
 @media (max-width: 520px) {
-  :root { --nav-h: 56px; }
+  :root { --nav-h: 56px; --nav-sub-h: 44px; }
   .brand-badge { width: 34px; height: 34px; }
+  .brand-wordmark { height: 15px; }
   .user-meta, .user-caret, .nav-btn-txt { display: none; }
   .nav-btn { width: var(--tap); padding: 0; justify-content: center; }
   .user { padding: 4px; }
