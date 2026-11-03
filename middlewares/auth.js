@@ -7,6 +7,8 @@ const { poolPromise, sql } = require('../config/db');
 //
 // Identidad: Azure Easy Auth (Entra ID) inyecta 'x-ms-client-principal-name'.
 // Autorización: padrón central acceso.Usuarios + acceso.Permisos (App = APP_KEY).
+// Último acceso: cada entrada deja fecha y conteo en acceso.UltimoAcceso
+// (lo muestra Usuarios y Permisos). Ver registrarAcceso() más abajo.
 // ============================================================================
 
 // Clave de esta app en acceso.Permisos.App. CAMBIAR por sistema.
@@ -34,6 +36,40 @@ function correoDeInvitado(email) {
   const base = email.slice(0, i);
   const guion = base.lastIndexOf('_');
   return guion === -1 ? null : `${base.slice(0, guion)}@${base.slice(guion + 1)}`;
+}
+
+// ---------------------------------------------------------------------------
+// Último acceso. Graba "esta persona entró a este módulo" en acceso.UltimoAcceso
+// (migración 003 de controlAccesos: una fila por persona y módulo, con fecha y
+// conteo). Para no escribir en cada clic, se graba como mucho una vez cada
+// ACCESO_CADA_MS por persona, en memoria de esta instancia. No espera la
+// escritura ni corta el request: si falla (falta la tabla o el GRANT al usuario
+// app_<modulo>) avisa UNA vez en el log y la app sigue andando igual.
+// ---------------------------------------------------------------------------
+const ACCESO_CADA_MS = 10 * 60 * 1000;
+const ultimoGrabado = new Map(); // UsuarioId → ms del último grabado
+let avisoAcceso = false;
+
+function registrarAcceso(pool, usuarioId) {
+  const ahora = Date.now();
+  if (ahora - (ultimoGrabado.get(usuarioId) || 0) < ACCESO_CADA_MS) return;
+  ultimoGrabado.set(usuarioId, ahora);
+  pool
+    .request()
+    .input('uid', sql.Int, usuarioId)
+    .input('app', sql.NVarChar(50), APP_KEY)
+    .query(
+      `MERGE acceso.UltimoAcceso AS d
+       USING (SELECT @uid AS UsuarioId, @app AS App) AS o ON d.UsuarioId = o.UsuarioId AND d.App = o.App
+       WHEN MATCHED THEN UPDATE SET UltimoAcceso = SYSUTCDATETIME(), Accesos = d.Accesos + 1
+       WHEN NOT MATCHED THEN INSERT (UsuarioId, App, UltimoAcceso, Accesos) VALUES (@uid, @app, SYSUTCDATETIME(), 1);`
+    )
+    .catch((err) => {
+      ultimoGrabado.delete(usuarioId);
+      if (avisoAcceso) return;
+      avisoAcceso = true;
+      console.warn(`[${APP_KEY}/Auth] No se pudo grabar el último acceso (¿falta la migración 003 de accesos o el GRANT a este usuario?): ${err.message}`);
+    });
 }
 
 module.exports = async function auth(req, res, next) {
@@ -88,6 +124,9 @@ module.exports = async function auth(req, res, next) {
     req.user = u
       ? { UsuarioId: u.UsuarioId, Email: u.Email, Nombre: u.Nombre, rol: u.Rol || null, registrado: true }
       : { UsuarioId: null, Email: email, Nombre: null, rol: null, registrado: false };
+
+    // Entró: queda el último acceso. Sin await, no frena el request.
+    if (u) registrarAcceso(pool, u.UsuarioId);
 
     next();
   } catch (err) {
