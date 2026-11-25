@@ -36,6 +36,9 @@ if (origenes.length) {
 
 app.use(express.json({ limit: '1mb' }));
 
+// Registro de uso por usuario (una línea JSON por request a /api -> log-offal).
+app.use('/api', require('./middlewares/usoLog')('verificacionlectores'));
+
 app.use('/api', rateLimit({ windowMs: 60 * 1000, limit: 300, standardHeaders: true, legacyHeaders: false }));
 
 // Front compilado.
